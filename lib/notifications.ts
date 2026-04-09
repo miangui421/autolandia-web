@@ -1,0 +1,98 @@
+import { Bot } from 'grammy';
+import { google } from 'googleapis';
+
+// Telegram
+const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN || '');
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+
+export interface TelegramSaleNotification {
+  nombreCompleto: string;
+  ci: string;
+  telefono: string;
+  cantidad: number;
+  monto: string;
+  ticketId: string;
+  numerosAsignados: string;
+  comprobanteUrl: string;
+}
+
+export async function notifyTelegramSale(data: TelegramSaleNotification): Promise<void> {
+  try {
+    const caption = [
+      `🤑 <b>NUEVA VENTA (WEB)</b>`,
+      ``,
+      `👤 Cliente: ${data.nombreCompleto}`,
+      `🆔 CI: ${data.ci}`,
+      `📱 Teléfono: ${data.telefono}`,
+      ``,
+      `🔢 Cantidad: ${data.cantidad}`,
+      `💰 Monto: ${data.monto} Gs`,
+      `🎫 Ticket ID: ${data.ticketId}`,
+      ``,
+      `🎟️ Números: ${data.numerosAsignados}`,
+    ].join('\n');
+
+    if (data.comprobanteUrl) {
+      await bot.api.sendPhoto(CHAT_ID, data.comprobanteUrl, { caption, parse_mode: 'HTML' });
+    } else {
+      await bot.api.sendMessage(CHAT_ID, caption, { parse_mode: 'HTML' });
+    }
+  } catch (err) {
+    console.error('Error notificando por Telegram:', err);
+  }
+}
+
+// Google Sheets
+function getAuth() {
+  return new google.auth.JWT({
+    email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+    key: (process.env.GOOGLE_SHEETS_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+}
+
+export interface SheetsSaleRow {
+  telefono: string;
+  fecha: string;
+  ticketId: string;
+  nombreCompleto: string;
+  ci: string;
+  monto: string;
+  numerosAsignados: string;
+  comprobanteUrl: string;
+  cantidad: number;
+  telefonoRegistro: string;
+  transactionId: string;
+  mensajeInicial: string;
+}
+
+export async function appendSaleToSheets(row: SheetsSaleRow): Promise<void> {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: getAuth() });
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Ventas!A:M',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [
+          [
+            row.telefono,
+            row.fecha,
+            row.ticketId,
+            row.nombreCompleto,
+            row.ci,
+            row.monto,
+            row.numerosAsignados,
+            row.comprobanteUrl,
+            row.cantidad,
+            row.telefonoRegistro,
+            row.transactionId,
+            row.mensajeInicial,
+          ],
+        ],
+      },
+    });
+  } catch (err) {
+    console.error('Error Google Sheets:', err instanceof Error ? err.message : err);
+  }
+}

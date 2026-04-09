@@ -1,0 +1,131 @@
+'use client';
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { ProgressBar } from '@/components/checkout/ProgressBar';
+import { StepNumbers } from '@/components/checkout/StepNumbers';
+import { StepData } from '@/components/checkout/StepData';
+import { StepPayment } from '@/components/checkout/StepPayment';
+import { StepConfirmation } from '@/components/checkout/StepConfirmation';
+import { registerSale } from '@/app/actions/register-sale';
+import { formatGs } from '@/lib/calculator';
+import type { CheckoutState } from '@/types';
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><p className="text-white/50">Cargando...</p></div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
+  const searchParams = useSearchParams();
+  const qty = parseInt(searchParams.get('qty') || '1');
+  const price = parseInt(searchParams.get('price') || '20000');
+
+  const [state, setState] = useState<CheckoutState>({
+    step: 1,
+    qty,
+    price,
+    isPromo3x1: false,
+    selectedNumbers: [],
+    mode: 'random',
+    ci: '',
+    nombre: '',
+    telefono: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  function handleNumbersComplete(selectedNumbers: number[], mode: 'manual' | 'random') {
+    setState((prev) => ({ ...prev, step: 2, selectedNumbers, mode }));
+  }
+
+  function handleDataComplete(ci: string, nombre: string, telefono: string) {
+    setState((prev) => ({ ...prev, step: 3, ci, nombre, telefono }));
+  }
+
+  async function handlePaymentComplete(receiptUrl: string, transactionId: string, metodoPago: string) {
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await registerSale({
+        cantidad: state.qty,
+        transactionId,
+        nombreCompleto: state.nombre,
+        ci: state.ci,
+        telefono: state.telefono,
+        monto: state.price,
+        comprobanteUrl: receiptUrl,
+        metodoPago,
+        selectedNumbers: state.selectedNumbers,
+      });
+
+      setState((prev) => ({
+        ...prev,
+        step: 4,
+        ticketId: result.ticketId,
+        numerosAsignados: result.numerosAsignados,
+        receiptUrl,
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error registrando venta');
+    }
+
+    setLoading(false);
+  }
+
+  return (
+    <main className="min-h-screen pb-12">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
+        <a href="/" className="text-white/50 text-xl">
+          ←
+        </a>
+        <h2 className="text-sm font-semibold">
+          Checkout · {qty} boleto{qty > 1 ? 's' : ''} · {formatGs(price)}
+        </h2>
+      </div>
+
+      {/* Progress */}
+      <ProgressBar currentStep={state.step as 1 | 2 | 3 | 4} />
+
+      {/* Content */}
+      <div className="max-w-[500px] mx-auto px-5 mt-6">
+        {error && (
+          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+
+        {state.step === 1 && <StepNumbers qty={qty} onComplete={handleNumbersComplete} />}
+
+        {state.step === 2 && (
+          <StepData onComplete={handleDataComplete} onBack={() => setState((prev) => ({ ...prev, step: 1 }))} />
+        )}
+
+        {state.step === 3 && (
+          <StepPayment
+            monto={price}
+            onComplete={handlePaymentComplete}
+            onBack={() => setState((prev) => ({ ...prev, step: 2 }))}
+          />
+        )}
+
+        {state.step === 4 && state.ticketId && state.numerosAsignados && (
+          <StepConfirmation
+            ticketId={state.ticketId}
+            nombre={state.nombre}
+            ci={state.ci}
+            qty={state.qty}
+            total={state.price}
+            numerosAsignados={state.numerosAsignados}
+          />
+        )}
+      </div>
+    </main>
+  );
+}
