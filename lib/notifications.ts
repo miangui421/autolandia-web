@@ -52,9 +52,21 @@ export async function notifyTelegramSale(data: TelegramSaleNotification): Promis
 
 // Google Sheets
 function getAuth() {
+  let key = process.env.GOOGLE_SHEETS_PRIVATE_KEY || '';
+  // Handle escaped \n from env vars (Vercel, .env.local, Docker)
+  if (key.includes('\\n')) {
+    key = key.split('\\n').join('\n');
+  }
+  // Strip surrounding quotes if present
+  if (key.startsWith('"') && key.endsWith('"')) {
+    key = key.slice(1, -1);
+    if (key.includes('\\n')) {
+      key = key.split('\\n').join('\n');
+    }
+  }
   return new google.auth.JWT({
     email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-    key: (process.env.GOOGLE_SHEETS_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    key,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 }
