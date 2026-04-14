@@ -35,10 +35,15 @@ export async function notifyTelegramSale(data: TelegramSaleNotification): Promis
       `🎟️ Números: ${data.numerosAsignados}`,
     ].join('\n');
 
-    if (data.comprobanteUrl) {
-      await getBot().api.sendPhoto(process.env.TELEGRAM_CHAT_ID!, data.comprobanteUrl, { caption, parse_mode: 'HTML' });
-    } else {
-      await getBot().api.sendMessage(process.env.TELEGRAM_CHAT_ID!, caption, { parse_mode: 'HTML' });
+    try {
+      if (data.comprobanteUrl) {
+        await getBot().api.sendPhoto(process.env.TELEGRAM_CHAT_ID!, data.comprobanteUrl, { caption, parse_mode: 'HTML' });
+      } else {
+        await getBot().api.sendMessage(process.env.TELEGRAM_CHAT_ID!, caption, { parse_mode: 'HTML' });
+      }
+    } catch {
+      // Fallback: send as text if photo fails (URL not public, etc)
+      await getBot().api.sendMessage(process.env.TELEGRAM_CHAT_ID!, caption + (data.comprobanteUrl ? `\n\n📎 ${data.comprobanteUrl}` : ''), { parse_mode: 'HTML' });
     }
   } catch (err) {
     console.error('Error notificando por Telegram:', err);

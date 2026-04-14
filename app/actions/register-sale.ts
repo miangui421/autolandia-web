@@ -46,33 +46,34 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     { onConflict: 'phone' },
   );
 
-  // Async notifications (non-blocking)
+  // Notifications — must await in serverless (Vercel kills lambda after return)
   const fecha = new Date().toISOString();
-  notifyTelegramSale({
-    nombreCompleto: input.nombreCompleto,
-    ci: input.ci,
-    telefono: input.telefono,
-    cantidad: input.cantidad,
-    monto: String(input.monto),
-    ticketId: result.ticketId,
-    numerosAsignados: result.numerosAsignados,
-    comprobanteUrl: input.comprobanteUrl,
-  }).catch(console.error);
-
-  appendSaleToSheets({
-    telefono: input.telefono,
-    fecha,
-    ticketId: result.ticketId,
-    nombreCompleto: input.nombreCompleto,
-    ci: input.ci,
-    monto: String(input.monto),
-    numerosAsignados: result.numerosAsignados,
-    comprobanteUrl: input.comprobanteUrl,
-    cantidad: input.cantidad,
-    telefonoRegistro: input.telefono,
-    transactionId: input.transactionId,
-    mensajeInicial: 'WEB',
-  }).catch(console.error);
+  await Promise.allSettled([
+    notifyTelegramSale({
+      nombreCompleto: input.nombreCompleto,
+      ci: input.ci,
+      telefono: input.telefono,
+      cantidad: input.cantidad,
+      monto: String(input.monto),
+      ticketId: result.ticketId,
+      numerosAsignados: result.numerosAsignados,
+      comprobanteUrl: input.comprobanteUrl,
+    }),
+    appendSaleToSheets({
+      telefono: input.telefono,
+      fecha,
+      ticketId: result.ticketId,
+      nombreCompleto: input.nombreCompleto,
+      ci: input.ci,
+      monto: String(input.monto),
+      numerosAsignados: result.numerosAsignados,
+      comprobanteUrl: input.comprobanteUrl,
+      cantidad: input.cantidad,
+      telefonoRegistro: input.telefono,
+      transactionId: input.transactionId,
+      mensajeInicial: 'WEB',
+    }),
+  ]);
 
   return result;
 }
