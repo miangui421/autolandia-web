@@ -9,10 +9,7 @@ export function Countdown() {
   useEffect(() => {
     const update = () => {
       const diff = SORTEO_DATE.getTime() - Date.now();
-      if (diff <= 0) {
-        setExpired(true);
-        return;
-      }
+      if (diff <= 0) { setExpired(true); return; }
       setTimeLeft({
         days: Math.floor(diff / 86400000),
         hours: Math.floor((diff % 86400000) / 3600000),
@@ -36,15 +33,17 @@ export function Countdown() {
 
   return (
     <div className="flex gap-3">
-      {items.map(({ value, label }) => (
+      {items.map(({ value, label }, i) => (
         <div
           key={label}
-          className="bg-white/5 border border-[#d4af37]/20 rounded-xl px-4 py-3 min-w-[70px] text-center"
+          className="relative bg-white/5 border border-[#d4af37]/25 rounded-xl px-4 py-3 min-w-[72px] text-center animate-pulse-gold"
+          style={{ animationDelay: `${i * 0.3}s` }}
         >
-          <div className="text-3xl font-extrabold text-[#d4af37] leading-none">
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-[#d4af37]/5 to-transparent pointer-events-none" />
+          <div className="text-3xl font-extrabold text-[#d4af37] leading-none relative tabular-nums">
             {String(value).padStart(2, '0')}
           </div>
-          <div className="text-[10px] text-white/40 uppercase tracking-widest mt-1">{label}</div>
+          <div className="text-[10px] text-white/40 uppercase tracking-widest mt-1 relative">{label}</div>
         </div>
       ))}
     </div>

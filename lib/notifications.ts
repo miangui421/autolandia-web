@@ -1,9 +1,12 @@
 import { Bot } from 'grammy';
 import { google } from 'googleapis';
 
-// Telegram
-const bot = new Bot(process.env.TELEGRAM_BOT_TOKEN || '');
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+// Lazy init to avoid issues during build/SSG
+let _bot: Bot | null = null;
+function getBot(): Bot {
+  if (!_bot) _bot = new Bot(process.env.TELEGRAM_BOT_TOKEN!);
+  return _bot;
+}
 
 export interface TelegramSaleNotification {
   nombreCompleto: string;
@@ -33,9 +36,9 @@ export async function notifyTelegramSale(data: TelegramSaleNotification): Promis
     ].join('\n');
 
     if (data.comprobanteUrl) {
-      await bot.api.sendPhoto(CHAT_ID, data.comprobanteUrl, { caption, parse_mode: 'HTML' });
+      await getBot().api.sendPhoto(process.env.TELEGRAM_CHAT_ID!, data.comprobanteUrl, { caption, parse_mode: 'HTML' });
     } else {
-      await bot.api.sendMessage(CHAT_ID, caption, { parse_mode: 'HTML' });
+      await getBot().api.sendMessage(process.env.TELEGRAM_CHAT_ID!, caption, { parse_mode: 'HTML' });
     }
   } catch (err) {
     console.error('Error notificando por Telegram:', err);

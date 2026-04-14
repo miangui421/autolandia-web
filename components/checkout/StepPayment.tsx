@@ -52,9 +52,16 @@ export function StepPayment({ monto, onComplete, onBack }: StepPaymentProps) {
     setError('');
   }
 
-  const bankRows = [
+  const [copied, setCopied] = useState(false);
+
+  function copyAlias() {
+    navigator.clipboard.writeText(BANK_INFO.alias);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const bankDetails = [
     { key: 'Banco', val: BANK_INFO.banco },
-    { key: 'Alias', val: BANK_INFO.alias },
     { key: 'Cuenta', val: BANK_INFO.cuenta },
     { key: 'Titular', val: BANK_INFO.titular },
     { key: 'Monto', val: formatGs(monto) },
@@ -64,8 +71,23 @@ export function StepPayment({ monto, onComplete, onBack }: StepPaymentProps) {
     <div className="space-y-4">
       <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-5">
         <h3 className="font-bold mb-4">Datos de transferencia</h3>
+
+        {/* Alias destacado arriba */}
+        <div className="bg-[#d4af37]/10 border border-[#d4af37]/30 rounded-xl p-4 mb-4 text-center">
+          <p className="text-xs text-white/50 uppercase tracking-wider mb-1">Alias para transferir</p>
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-3xl font-extrabold text-[#d4af37] tracking-wider">{BANK_INFO.alias}</span>
+            <button
+              onClick={copyAlias}
+              className="bg-[#d4af37]/20 hover:bg-[#d4af37]/30 text-[#d4af37] px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+            >
+              {copied ? 'Copiado!' : 'Copiar'}
+            </button>
+          </div>
+        </div>
+
         <div className="bg-[#d4af37]/5 border border-[#d4af37]/15 rounded-xl p-4">
-          {bankRows.map(({ key, val }) => (
+          {bankDetails.map(({ key, val }) => (
             <div key={key} className="flex justify-between py-1.5 text-sm border-b border-white/[0.04] last:border-0">
               <span className="text-white/40">{key}</span>
               <span className={`font-semibold ${key === 'Monto' ? 'text-[#d4af37] text-base' : 'text-[#d4af37]'}`}>

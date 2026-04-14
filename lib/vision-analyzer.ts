@@ -1,7 +1,11 @@
 import OpenAI from 'openai';
 import type { VisionResult } from '@/types';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  return _openai;
+}
 
 const FORENSIC_PROMPT = `Actúa como un Auditor Forense Financiero experto en validación de transferencias bancarias en Paraguay y Cupones de Sorteo Físicos.
 Tu misión es clasificar el documento y extraer datos.
@@ -104,7 +108,7 @@ DOBLE VERIFICACIÓN (OBLIGATORIA ANTES DE RESPONDER):
 Responde ÚNICAMENTE con el JSON. Sin explicaciones.`;
 
 export async function analyzeReceipt(imageUrl: string): Promise<VisionResult> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAI().chat.completions.create({
     model: 'gpt-4o',
     messages: [
       {
