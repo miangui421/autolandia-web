@@ -8,6 +8,7 @@ import { PurchaseCard } from '@/components/dashboard/PurchaseCard';
 import { getUserPurchases, getUserStats } from '@/app/actions/user-data';
 import type { UserPurchase } from '@/app/actions/user-data';
 import type { UserStats } from '@/app/actions/user-data';
+import { SORTEO_PRIZE, SORTEO_DATE } from '@/lib/constants';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,8 +18,7 @@ const supabase = createClient(
 export default function MisBoletosPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState('');
-  const [telefono, setTelefono] = useState('');
+  const [userName, setUserName] = useState('');
   const [purchases, setPurchases] = useState<UserPurchase[]>([]);
   const [stats, setStats] = useState<UserStats>({ totalBoletos: 0, totalGastado: 0, totalCompras: 0 });
 
@@ -30,9 +30,9 @@ export default function MisBoletosPage() {
         return;
       }
 
-      setUserEmail(user.email || '');
+      const name = user.user_metadata?.nombre || user.email || '';
+      setUserName(name);
       const phone = user.user_metadata?.telefono || '';
-      setTelefono(phone);
 
       if (phone) {
         const [purchaseData, statsData] = await Promise.all([
@@ -55,11 +55,14 @@ export default function MisBoletosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white/50">Cargando...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-2 border-[#d4af37]/30 border-t-[#d4af37] rounded-full animate-spin" />
+        <p className="text-white/30 text-sm">Cargando tus boletos...</p>
       </div>
     );
   }
+
+  const daysLeft = Math.max(0, Math.ceil((SORTEO_DATE.getTime() - Date.now()) / 86400000));
 
   return (
     <div className="min-h-screen">
@@ -69,46 +72,76 @@ export default function MisBoletosPage() {
           <Link href="/" className="text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] to-[#f5d76e]">
             AUTOLANDIA
           </Link>
-          <button onClick={handleLogout} className="text-xs text-white/40 hover:text-white/60 transition-colors">
+          <button onClick={handleLogout} className="text-xs text-white/40 hover:text-white/60 transition-colors border border-white/10 px-3 py-1.5 rounded-lg">
             Cerrar sesion
           </button>
         </div>
       </nav>
 
-      <div className="max-w-[600px] mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-[600px] mx-auto px-4 py-6 space-y-5">
         {/* Greeting */}
-        <div>
-          <h1 className="text-xl font-bold">Hola! 👋</h1>
-          <p className="text-sm text-white/40 mt-1">{userEmail}</p>
+        <div className="animate-slide-up">
+          <p className="text-white/40 text-sm">Bienvenido de vuelta</p>
+          <h1 className="text-2xl font-extrabold mt-0.5">
+            {userName.split(' ')[0]} <span className="inline-block animate-float">👋</span>
+          </h1>
+        </div>
+
+        {/* Active raffle card */}
+        <div className="relative overflow-hidden rounded-2xl border border-[#d4af37]/20 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#d4af37]/10 via-transparent to-[#d4af37]/5 pointer-events-none" />
+          <div className="flex items-center gap-4 p-4 relative">
+            <img
+              src="https://xtwrmcbvjgywwdpdwoxw.supabase.co/storage/v1/object/public/assets/WhatsApp%20Image%202026-03-30%20at%2016.56.51.jpeg"
+              alt={SORTEO_PRIZE}
+              className="w-20 h-20 rounded-xl object-cover border border-[#d4af37]/20"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] text-[#d4af37] uppercase tracking-widest font-semibold">Sorteo activo</p>
+              <p className="text-sm font-bold mt-0.5 truncate">{SORTEO_PRIZE}</p>
+              <p className="text-xs text-white/30 mt-0.5">Faltan {daysLeft} dias</p>
+            </div>
+            <Link
+              href="/"
+              className="shrink-0 bg-gradient-to-r from-[#d4af37] to-[#c4a030] text-black text-xs font-bold px-4 py-2 rounded-xl"
+            >
+              Comprar
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
-        <StatsRow {...stats} />
-
-        {/* CTA */}
-        <Link
-          href="/"
-          className="block w-full py-3.5 rounded-xl font-bold text-center bg-gradient-to-r from-[#d4af37] to-[#c4a030] text-black text-sm shadow-[0_4px_16px_rgba(212,175,55,0.2)]"
-        >
-          Comprar mas boletos
-        </Link>
+        <div className="animate-slide-up" style={{ animationDelay: '0.15s' }}>
+          <StatsRow {...stats} />
+        </div>
 
         {/* Purchase history */}
-        <div>
-          <h2 className="text-sm font-bold text-white/60 uppercase tracking-wider mb-3">
-            Historial de compras
-          </h2>
+        <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-bold text-white/60 uppercase tracking-wider">
+              Mis compras
+            </h2>
+            <span className="text-[11px] text-white/20">{purchases.length} compra{purchases.length !== 1 ? 's' : ''}</span>
+          </div>
 
           {purchases.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <div className="text-4xl mb-3">🎟️</div>
-              <p className="text-white/50 text-sm">Aun no tenes compras</p>
-              <p className="text-white/30 text-xs mt-1">Compra tu primer boleto y aparecera aqui</p>
+            <div className="glass-card p-10 text-center">
+              <div className="text-5xl mb-4">🎟️</div>
+              <p className="text-white/60 font-semibold">Aun no tenes boletos</p>
+              <p className="text-white/30 text-sm mt-1 mb-5">Compra tu primer boleto y aparecera aqui</p>
+              <Link
+                href="/"
+                className="inline-block bg-gradient-to-r from-[#d4af37] to-[#c4a030] text-black text-sm font-bold px-6 py-3 rounded-xl"
+              >
+                Participar ahora
+              </Link>
             </div>
           ) : (
-            <div className="space-y-2">
-              {purchases.map((p) => (
-                <PurchaseCard key={p.ticket_id} purchase={p} />
+            <div className="space-y-2.5">
+              {purchases.map((p, i) => (
+                <div key={p.ticket_id} className="animate-slide-up" style={{ animationDelay: `${0.25 + i * 0.05}s` }}>
+                  <PurchaseCard purchase={p} />
+                </div>
               ))}
             </div>
           )}

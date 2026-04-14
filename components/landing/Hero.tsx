@@ -39,12 +39,14 @@ export function Hero() {
         {SORTEO_PRIZE_DETAIL}
       </p>
 
-      {/* Car glow placeholder */}
+      {/* Car image */}
       <div className="relative mb-10 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-        <div className="absolute -inset-6 bg-[radial-gradient(circle,rgba(212,175,55,0.15),transparent_70%)] rounded-full blur-xl" />
-        <div className="w-[min(420px,85vw)] h-[180px] rounded-2xl border border-dashed border-[#d4af37]/20 bg-gradient-to-br from-[#d4af37]/5 to-transparent flex items-center justify-center relative">
-          <span className="text-white/20 text-sm">BMW Serie 5 2013</span>
-        </div>
+        <div className="absolute -inset-8 bg-[radial-gradient(circle,rgba(212,175,55,0.2),transparent_70%)] rounded-full blur-2xl" />
+        <img
+          src="https://xtwrmcbvjgywwdpdwoxw.supabase.co/storage/v1/object/public/assets/WhatsApp%20Image%202026-03-30%20at%2016.56.51.jpeg"
+          alt="BMW Serie 5 2013 - Sorteo Autolandia 3.0"
+          className="w-[min(450px,90vw)] rounded-2xl border border-[#d4af37]/20 shadow-[0_0_40px_rgba(212,175,55,0.15)] relative"
+        />
       </div>
 
       {/* Countdown */}
