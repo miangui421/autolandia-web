@@ -79,7 +79,8 @@ export async function verifyOtpAndGetToken(
     return { success: false, error: 'Error iniciando sesion. Intenta de nuevo.' };
   }
 
-  const hasProfile = !!user?.user_metadata?.nombre;
+  // Perfil completo = tiene nombre Y CI
+  const hasProfile = !!(user?.user_metadata?.nombre && user?.user_metadata?.ci);
 
   return {
     success: true,

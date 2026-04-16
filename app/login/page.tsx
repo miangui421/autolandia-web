@@ -28,6 +28,7 @@ export default function LoginPage() {
   const [telefono, setTelefono] = useState('');
   const [otp, setOtp] = useState('');
   const [nombre, setNombre] = useState('');
+  const [ci, setCi] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -107,8 +108,8 @@ export default function LoginPage() {
   }
 
   async function handleSaveProfile() {
-    if (!nombre.trim()) {
-      setError('Ingresa tu nombre');
+    if (!nombre.trim() || !ci.trim()) {
+      setError('Completa todos los campos');
       return;
     }
     setLoading(true);
@@ -116,11 +117,11 @@ export default function LoginPage() {
 
     // Usa la sesión activa del cliente (no server action)
     const { error } = await supabase.auth.updateUser({
-      data: { nombre: nombre.trim() },
+      data: { nombre: nombre.trim(), ci: ci.trim() },
     });
 
     if (error) {
-      setError('Error guardando tu nombre: ' + error.message);
+      setError('Error guardando tus datos: ' + error.message);
       setLoading(false);
     } else {
       router.push('/mis-boletos');
@@ -234,7 +235,7 @@ export default function LoginPage() {
           <div className="glass-card p-6">
             <h2 className="text-lg font-bold mb-2">Bienvenido! 👋</h2>
             <p className="text-sm text-white/40 mb-5">
-              Necesitamos un dato mas para completar tu cuenta.
+              Necesitamos algunos datos para completar tu cuenta.
             </p>
 
             <div className="mb-4">
@@ -244,11 +245,23 @@ export default function LoginPage() {
                 placeholder="Ej: Juan Perez"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveProfile()}
                 autoFocus
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-[#d4af37]/50 transition-colors"
               />
-              <p className="text-[11px] text-white/25 mt-1.5">Asi te reconoceremos en el sistema</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-xs text-white/50 uppercase tracking-wider mb-1.5">Cedula de identidad</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="Ej: 4.521.332"
+                value={ci}
+                onChange={(e) => setCi(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveProfile()}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white text-sm focus:border-[#d4af37]/50 transition-colors"
+              />
+              <p className="text-[11px] text-white/25 mt-1.5">Necesaria para generar tus boletos</p>
             </div>
 
             {error && (

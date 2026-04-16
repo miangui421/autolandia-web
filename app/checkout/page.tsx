@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import { ProgressBar } from '@/components/checkout/ProgressBar';
 import { StepNumbers } from '@/components/checkout/StepNumbers';
 import { StepData } from '@/components/checkout/StepData';
@@ -10,6 +10,11 @@ import { StepConfirmation } from '@/components/checkout/StepConfirmation';
 import { registerSale } from '@/app/actions/register-sale';
 import { formatGs } from '@/lib/calculator';
 import type { CheckoutState } from '@/types';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+);
 
 export default function CheckoutPage() {
   return (
@@ -38,6 +43,32 @@ function CheckoutContent() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Prellenar datos si el usuario esta logueado
+  useEffect(() => {
+    async function loadUserData() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Extraer telefono del metadata o del email interno (user.XXX@autolandia.internal)
+      let phone = user.user_metadata?.telefono || user.phone || '';
+      if (!phone && user.email?.endsWith('@autolandia.internal')) {
+        const match = user.email.match(/user\.(\d+)@/);
+        if (match) phone = match[1];
+      }
+      // Formatear telefono a formato local (09XXXXXXXX) para mostrar en el form
+      let displayPhone = phone;
+      if (phone.startsWith('595')) displayPhone = '0' + phone.slice(3);
+
+      setState((prev) => ({
+        ...prev,
+        nombre: user.user_metadata?.nombre || '',
+        ci: user.user_metadata?.ci || '',
+        telefono: displayPhone,
+      }));
+    }
+    loadUserData();
+  }, []);
 
   function handleNumbersComplete(selectedNumbers: number[], mode: 'manual' | 'random') {
     setState((prev) => ({ ...prev, step: 2, selectedNumbers, mode }));
@@ -104,7 +135,13 @@ function CheckoutContent() {
         {state.step === 1 && <StepNumbers qty={qty} onComplete={handleNumbersComplete} />}
 
         {state.step === 2 && (
-          <StepData onComplete={handleDataComplete} onBack={() => setState((prev) => ({ ...prev, step: 1 }))} />
+          <StepData
+            initialCi={state.ci}
+            initialNombre={state.nombre}
+            initialTelefono={state.telefono}
+            onComplete={handleDataComplete}
+            onBack={() => setState((prev) => ({ ...prev, step: 1 }))}
+          />
         )}
 
         {state.step === 3 && (
