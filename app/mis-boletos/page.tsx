@@ -30,9 +30,15 @@ export default function MisBoletosPage() {
         return;
       }
 
-      const name = user.user_metadata?.nombre || user.email || '';
+      // Extraer teléfono: prioridad metadata > user.phone > email interno (user.XXX@autolandia.internal)
+      let phone = user.user_metadata?.telefono || user.phone || '';
+      if (!phone && user.email?.endsWith('@autolandia.internal')) {
+        const match = user.email.match(/user\.(\d+)@/);
+        if (match) phone = match[1];
+      }
+      const formattedPhone = phone ? `+${phone}` : '';
+      const name = user.user_metadata?.nombre || formattedPhone;
       setUserName(name);
-      const phone = user.user_metadata?.telefono || '';
 
       if (phone) {
         const [purchaseData, statsData] = await Promise.all([
