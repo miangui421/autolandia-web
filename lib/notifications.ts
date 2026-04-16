@@ -89,6 +89,8 @@ export interface SheetsSaleRow {
 export async function appendSaleToSheets(row: SheetsSaleRow): Promise<void> {
   try {
     const sheets = google.sheets({ version: 'v4', auth: getAuth() });
+    // Escribimos en A:M. Columnas A-L iguales al bot. Columna M = "Canal" (WEB).
+    // El bot escribe 12 valores y deja M vacia, asi se distinguen ventas web vs bot.
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
       range: 'Ventas!A:M',
@@ -108,11 +110,85 @@ export async function appendSaleToSheets(row: SheetsSaleRow): Promise<void> {
             row.telefonoRegistro,
             row.transactionId,
             row.mensajeInicial,
+            'WEB', // col M = Canal
           ],
         ],
       },
     });
   } catch (err) {
     console.error('Error Google Sheets:', err instanceof Error ? err.message : err);
+  }
+}
+
+// ─── Leads Web ────────────────────────────────────────────────
+// Registra un lead nuevo (registrado en la web) en la hoja "Leads Web"
+// del mismo spreadsheet. Si la hoja no existe, la crea.
+
+export interface SheetsLeadRow {
+  fecha: string;
+  telefono: string;
+  nombreCompleto: string;
+  ci: string;
+  canal: string; // WEB | BOT
+  stage: string; // NUEVO | INTERESADO | COMPRADOR | RECURRENTE
+}
+
+/**
+ * Crea la hoja "Leads Web" si no existe, con headers.
+ * Idempotente: si ya existe, no hace nada.
+ */
+async function ensureLeadsSheetExists(): Promise<void> {
+  const sheets = google.sheets({ version: 'v4', auth: getAuth() });
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
+
+  const meta = await sheets.spreadsheets.get({ spreadsheetId });
+  const exists = meta.data.sheets?.some((s) => s.properties?.title === 'Leads Web');
+  if (exists) return;
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        { addSheet: { properties: { title: 'Leads Web' } } },
+      ],
+    },
+  });
+
+  // Agregar headers
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: 'Leads Web!A1:F1',
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [['Fecha', 'Telefono', 'Nombre Completo', 'CI', 'Canal', 'Stage']],
+    },
+  });
+}
+
+export async function appendLeadToSheets(row: SheetsLeadRow): Promise<void> {
+  try {
+    await ensureLeadsSheetExists();
+
+    const sheets = google.sheets({ version: 'v4', auth: getAuth() });
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+      range: 'Leads Web!A:F',
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: {
+        values: [
+          [
+            row.fecha,
+            row.telefono,
+            row.nombreCompleto,
+            row.ci,
+            row.canal,
+            row.stage,
+          ],
+        ],
+      },
+    });
+  } catch (err) {
+    console.error('Error Google Sheets (Leads Web):', err instanceof Error ? err.message : err);
   }
 }
