@@ -255,7 +255,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="Ej: 4.521.332"
+                placeholder="Ej: 4521332"
                 value={ci}
                 onChange={(e) => setCi(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveProfile()}
