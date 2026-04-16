@@ -79,6 +79,31 @@ export async function verifyOtpAndGetToken(
     return { success: false, error: 'Error iniciando sesion. Intenta de nuevo.' };
   }
 
+  // 5. Track lead (NUEVO si no existe, actualizar last_contact_at si existe)
+  // No degradamos el stage: si ya es COMPRADOR/RECURRENTE lo mantenemos.
+  const { data: existingLead } = await supabase
+    .from('leads')
+    .select('phone, stage')
+    .eq('phone', cleanPhone)
+    .maybeSingle();
+
+  if (!existingLead) {
+    await supabase.from('leads').insert({
+      phone: cleanPhone,
+      stage: 'NUEVO',
+      first_contact_at: new Date().toISOString(),
+      last_contact_at: new Date().toISOString(),
+      total_purchases: 0,
+      total_spent: 0,
+    });
+  } else {
+    // Solo actualizar last_contact_at, no tocar stage ni totales
+    await supabase
+      .from('leads')
+      .update({ last_contact_at: new Date().toISOString() })
+      .eq('phone', cleanPhone);
+  }
+
   // Perfil completo = tiene nombre Y CI
   const hasProfile = !!(user?.user_metadata?.nombre && user?.user_metadata?.ci);
 

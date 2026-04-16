@@ -44,7 +44,7 @@ export function StepData({
       )}
       {!isPrefilled && <div className="mb-4" />}
 
-      <Input label="Cedula de identidad" placeholder="Ej: 4521332" value={ci} onChange={(e) => setCi(e.target.value)} />
+      <Input label="Cedula de identidad" placeholder="Ingresa tu CI sin puntos" value={ci} onChange={(e) => setCi(e.target.value)} />
       <Input label="Nombre completo" placeholder="Ej: Juan Perez" value={nombre} onChange={(e) => setNombre(e.target.value)} />
       <Input
         label="Telefono"

@@ -255,7 +255,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="Ej: 4521332"
+                placeholder="Ingresa tu CI sin puntos"
                 value={ci}
                 onChange={(e) => setCi(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveProfile()}
