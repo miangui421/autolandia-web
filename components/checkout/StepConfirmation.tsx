@@ -55,8 +55,14 @@ export function StepConfirmation({ ticketId, nombre, ci, qty, total, numerosAsig
       </div>
 
       <a
-        href="/"
+        href="/mis-boletos"
         className="block w-full py-4 rounded-xl font-bold text-center bg-gradient-to-r from-[#d4af37] to-[#c4a030] text-black"
+      >
+        Ver mis boletos
+      </a>
+      <a
+        href="/"
+        className="block w-full py-3 rounded-xl font-semibold text-center border border-white/15 text-white/80 hover:bg-white/5 transition-colors"
       >
         Comprar mas boletos
       </a>
