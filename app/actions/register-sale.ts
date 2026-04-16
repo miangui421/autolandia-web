@@ -27,7 +27,7 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     comprobanteUrl: input.comprobanteUrl,
     metodoPago: input.metodoPago,
     telefonoRegistro: input.telefono,
-    mensajeInicial: 'WEB',
+    mensajeInicial: '', // La web no tiene "mensaje inicial" (campo del bot). Canal WEB va en col M
   };
 
   const result =
@@ -46,8 +46,11 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     { onConflict: 'phone' },
   );
 
-  // Notifications — must await in serverless (Vercel kills lambda after return)
-  const fecha = new Date().toISOString();
+  // Notifications — must await in serverless (lambda termina sin await)
+  // Fecha en hora Paraguay (UTC-3) con formato "YYYY-MM-DD HH:mm:ss"
+  const fecha = new Date().toLocaleString('sv-SE', {
+    timeZone: 'America/Asuncion',
+  });
   await Promise.allSettled([
     notifyTelegramSale({
       nombreCompleto: input.nombreCompleto,
