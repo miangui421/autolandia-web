@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
-import { sendOtp, verifyOtpAndGetToken } from '@/app/actions/auth-otp';
+import { sendOtp, verifyOtpAndGetToken, trackLeadCompleted } from '@/app/actions/auth-otp';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -115,7 +115,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    // Usa la sesión activa del cliente (no server action)
+    // 1. Actualizar user_metadata (usa sesion del cliente)
     const { error } = await supabase.auth.updateUser({
       data: { nombre: nombre.trim(), ci: ci.trim() },
     });
@@ -123,9 +123,14 @@ export default function LoginPage() {
     if (error) {
       setError('Error guardando tus datos: ' + error.message);
       setLoading(false);
-    } else {
-      router.push('/mis-boletos');
+      return;
     }
+
+    // 2. Track lead en Google Sheets + Telegram (server action, non-blocking)
+    const phone = normalizePhone(telefono).replace('+', '');
+    trackLeadCompleted(phone, nombre.trim(), ci.trim()).catch(console.error);
+
+    router.push('/mis-boletos');
   }
 
   async function handleResend() {

@@ -1,6 +1,7 @@
 'use server';
 import { sendVerification, checkVerification } from '@/lib/twilio';
 import { createServerClient } from '@/lib/supabase-server';
+import { appendLeadToSheets } from '@/lib/notifications';
 
 /**
  * Envía un OTP al teléfono via Twilio Verify Service.
@@ -115,28 +116,50 @@ export async function verifyOtpAndGetToken(
 }
 
 /**
- * Guarda el nombre del usuario en su metadata.
+ * Registra en Google Sheets + Telegram que un lead completo su perfil en la web.
+ * Se llama DESPUES de que el cliente actualizo el user_metadata con nombre y CI.
+ *
+ * Idempotencia: usa el flag sheet_registered en user_metadata. Si ya esta seteado,
+ * no registra de nuevo (evita duplicados si el user edita su perfil).
  */
-export async function saveUserProfile(nombre: string): Promise<{ success: boolean; error?: string }> {
-  if (!nombre.trim()) {
-    return { success: false, error: 'El nombre es obligatorio' };
-  }
-
+export async function trackLeadCompleted(
+  telefono: string,
+  nombre: string,
+  ci: string,
+): Promise<{ success: boolean }> {
+  const cleanPhone = telefono.replace(/\D/g, '');
   const supabase = createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // 1. Buscar user por telefono/email interno
+  const internalEmail = `user.${cleanPhone}@autolandia.internal`;
+  const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const user = list?.users.find((u) => u.email === internalEmail);
 
   if (!user) {
-    return { success: false, error: 'Sesion no valida' };
+    return { success: false };
   }
 
-  const { error } = await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, nombre: nombre.trim() },
+  // 2. Si ya se registro en el sheet antes, no duplicar
+  if (user.user_metadata?.sheet_registered) {
+    return { success: true };
+  }
+
+  // 3. Registrar en Google Sheets + notificar Telegram (ambos async, non-blocking)
+  const leadRow = {
+    fecha: new Date().toISOString(),
+    telefono: cleanPhone,
+    nombreCompleto: nombre,
+    ci,
+    canal: 'WEB',
+    stage: 'NUEVO',
+  };
+
+  await appendLeadToSheets(leadRow);
+
+  // 4. Marcar el flag para no re-registrar
+  await supabase.auth.admin.updateUserById(user.id, {
+    user_metadata: { ...user.user_metadata, sheet_registered: true },
   });
 
-  if (error) {
-    return { success: false, error: error.message };
-  }
   return { success: true };
 }
