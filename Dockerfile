@@ -11,12 +11,12 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Next.js necesita las env vars públicas en build time.
-# Las privadas se pasan en runtime por Easypanel.
-ARG NEXT_PUBLIC_SUPABASE_URL
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# NEXT_PUBLIC_* deben estar disponibles en build time porque Next.js las
+# embebe en el bundle del cliente. Son valores públicos (anon key publicable),
+# por eso van hardcoded aquí en lugar de build args.
+ENV NEXT_PUBLIC_SUPABASE_URL=https://jyytukfcnembucompttu.supabase.co
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5eXR1a2ZjbmVtYnVjb21wdHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNzIzMjksImV4cCI6MjA4NzY0ODMyOX0.3kPTa2SFAp5lGLbryWkL3_XrU8dyjbjwmIPIHlOzJP4
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
@@ -26,10 +26,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Crear usuario no-root por seguridad
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 
-# Copiar build standalone (include solo deps necesarias)
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
