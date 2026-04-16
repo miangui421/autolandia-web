@@ -108,6 +108,23 @@ export async function verifyOtpAndGetToken(
   // Perfil completo = tiene nombre Y CI
   const hasProfile = !!(user?.user_metadata?.nombre && user?.user_metadata?.ci);
 
+  // Si el user ya tiene perfil completo pero nunca se registró en la hoja
+  // "Leads Web" (users legacy de antes del tracking), registrarlo ahora.
+  if (hasProfile && !user?.user_metadata?.sheet_registered) {
+    const leadRow = {
+      fecha: new Date().toLocaleString('sv-SE', { timeZone: 'America/Asuncion' }),
+      telefono: cleanPhone,
+      nombreCompleto: user.user_metadata.nombre,
+      ci: user.user_metadata.ci,
+      canal: 'WEB',
+      stage: existingLead?.stage || 'NUEVO',
+    };
+    await appendLeadToSheets(leadRow).catch(console.error);
+    await supabase.auth.admin.updateUserById(user.id, {
+      user_metadata: { ...user.user_metadata, sheet_registered: true },
+    });
+  }
+
   return {
     success: true,
     actionLink: linkData.properties.action_link,
@@ -146,7 +163,7 @@ export async function trackLeadCompleted(
 
   // 3. Registrar en Google Sheets + notificar Telegram (ambos async, non-blocking)
   const leadRow = {
-    fecha: new Date().toISOString(),
+    fecha: new Date().toLocaleString('sv-SE', { timeZone: 'America/Asuncion' }),
     telefono: cleanPhone,
     nombreCompleto: nombre,
     ci,
