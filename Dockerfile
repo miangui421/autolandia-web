@@ -1,4 +1,6 @@
 # syntax=docker/dockerfile:1.7
+# ⚠️ Este Dockerfile es para MAIN → PROD
+# El branch develop tiene su propio Dockerfile con valores de DEV
 
 # ─── Stage 1: deps ────────────────────────────────────────────
 FROM node:20-alpine AS deps
@@ -12,11 +14,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# NEXT_PUBLIC_* deben estar disponibles en build time porque Next.js las
-# embebe en el bundle del cliente. Son valores públicos (anon key publicable),
-# por eso van hardcoded aquí en lugar de build args.
-ENV NEXT_PUBLIC_SUPABASE_URL=https://jyytukfcnembucompttu.supabase.co
-ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5eXR1a2ZjbmVtYnVjb21wdHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNzIzMjksImV4cCI6MjA4NzY0ODMyOX0.3kPTa2SFAp5lGLbryWkL3_XrU8dyjbjwmIPIHlOzJP4
+# NEXT_PUBLIC_* se embeben en el bundle del cliente en build time.
+# Son valores PUBLICOS (anon key publicable), por eso van hardcoded.
+# PROD project: xtwrmcbvjgywwdpdwoxw
+ENV NEXT_PUBLIC_SUPABASE_URL=https://xtwrmcbvjgywwdpdwoxw.supabase.co
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0d3JtY2J2amd5d3dkcGR3b3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNDg5MDEsImV4cCI6MjA4NzgyNDkwMX0.xA81ubTZtK66ipTJPQkdWm617QHtA8A0DmLAyVXn0fo
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
