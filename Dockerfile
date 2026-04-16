@@ -36,7 +36,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 EXPOSE 3000
-ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# PORT hardcoded con 'sh -c' para forzar 3000 aunque Easypanel inyecte PORT=80
+# en runtime (su template "App" setea PORT=80 automaticamente por defecto).
+CMD ["sh", "-c", "PORT=3000 node server.js"]
