@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
@@ -14,6 +14,7 @@ export function Navbar() {
   const [firstName, setFirstName] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -25,12 +26,25 @@ export function Navbar() {
       setLoaded(true);
     }
     load();
-
-    // Cerrar dropdown al hacer click fuera
-    const close = () => setOpen(false);
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
   }, []);
+
+  // Cerrar dropdown al hacer click fuera (usando ref en vez de stopPropagation)
+  useEffect(() => {
+    if (!open) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    // setTimeout 0 evita que el click que ABRE el menu lo cierre inmediatamente
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [open]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -48,7 +62,6 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Placeholder mientras carga la sesion para evitar flash */}
         {!loaded && <div className="w-20 h-8" />}
 
         {loaded && !firstName && (
@@ -61,9 +74,9 @@ export function Navbar() {
         )}
 
         {loaded && firstName && (
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <div className="relative" ref={menuRef}>
             <button
-              onClick={() => setOpen(!open)}
+              onClick={() => setOpen((prev) => !prev)}
               className="flex items-center gap-2 text-sm font-semibold text-[#d4af37] bg-[#d4af37]/10 border border-[#d4af37]/30 px-4 py-2 rounded-full hover:bg-[#d4af37]/15 transition-all"
             >
               <span className="w-6 h-6 rounded-full bg-gradient-to-br from-[#d4af37] to-[#f5d76e] text-black flex items-center justify-center text-xs font-extrabold">
