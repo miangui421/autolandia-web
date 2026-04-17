@@ -14,6 +14,7 @@ interface RegisterSaleInput {
   comprobanteUrl: string;
   metodoPago: string;
   selectedNumbers: number[];
+  isPromo3x1?: boolean;
 }
 
 export async function registerSale(input: RegisterSaleInput): Promise<SaleResult> {
@@ -28,6 +29,7 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     metodoPago: input.metodoPago,
     telefonoRegistro: input.telefono,
     mensajeInicial: '', // La web no tiene "mensaje inicial" (campo del bot). Canal WEB va en col M
+    isPromo3x1: input.isPromo3x1 === true,
   };
 
   const result =

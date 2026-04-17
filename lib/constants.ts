@@ -26,7 +26,7 @@ export const PACKS_3X1: Pack[] = [
   { cantidad: 30, precio: 200_000, descuento: '3x1', precioPorBoleto: 6_667 },
 ];
 
-export const PROMO_3X1_END = new Date('2026-04-18T23:59:59-04:00');
+export const PROMO_3X1_END = new Date('2026-04-30T23:59:59-04:00');
 
 export const BANK_INFO = {
   banco: 'Ueno Bank',

@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
@@ -22,8 +22,25 @@ function normalizePhone(phone: string): string {
 
 type Step = 'phone' | 'otp' | 'profile';
 
+/** Solo permite rutas internas (evita open-redirect). */
+function sanitizeNext(next: string | null): string {
+  if (!next) return '/mis-boletos';
+  if (!next.startsWith('/') || next.startsWith('//')) return '/mis-boletos';
+  return next;
+}
+
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-white/50">Cargando...</p></div>}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextUrl = sanitizeNext(searchParams.get('next'));
   const [step, setStep] = useState<Step>('phone');
   const [telefono, setTelefono] = useState('');
   const [otp, setOtp] = useState('');
@@ -103,7 +120,7 @@ export default function LoginPage() {
       setStep('profile');
       setLoading(false);
     } else {
-      router.push('/mis-boletos');
+      router.push(nextUrl);
     }
   }
 
@@ -130,7 +147,7 @@ export default function LoginPage() {
     const phone = normalizePhone(telefono).replace('+', '');
     trackLeadCompleted(phone, nombre.trim(), ci.trim()).catch(console.error);
 
-    router.push('/mis-boletos');
+    router.push(nextUrl);
   }
 
   async function handleResend() {

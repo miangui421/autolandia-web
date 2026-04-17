@@ -28,12 +28,13 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const qty = parseInt(searchParams.get('qty') || '1');
   const price = parseInt(searchParams.get('price') || '20000');
+  const isPromo3x1 = searchParams.get('promo') === '3x1';
 
   const [state, setState] = useState<CheckoutState>({
     step: 1,
     qty,
     price,
-    isPromo3x1: false,
+    isPromo3x1,
     selectedNumbers: [],
     mode: 'random',
     ci: '',
@@ -93,6 +94,7 @@ function CheckoutContent() {
         comprobanteUrl: receiptUrl,
         metodoPago,
         selectedNumbers: state.selectedNumbers,
+        isPromo3x1: state.isPromo3x1,
       });
 
       setState((prev) => ({

@@ -11,6 +11,7 @@ export interface RegisterSaleInput {
   metodoPago: string;
   telefonoRegistro: string;
   mensajeInicial: string;
+  isPromo3x1?: boolean;
 }
 
 export interface RegisterSaleResult {
@@ -36,6 +37,7 @@ export async function registrarVentaRandom(input: RegisterSaleInput): Promise<Re
     p_telefono_registro: input.telefonoRegistro,
     p_mensaje_inicial: input.mensajeInicial,
     p_numeros_especificos: null,
+    p_is_promo_3x1: input.isPromo3x1 === true,
   });
 
   if (error) throw new Error(`Error registrando venta: ${error.message}`);
@@ -67,6 +69,7 @@ export async function registrarVentaManual(
     p_telefono_registro: input.telefonoRegistro,
     p_mensaje_inicial: input.mensajeInicial,
     p_numeros_especificos: numbers,
+    p_is_promo_3x1: input.isPromo3x1 === true,
   });
 
   if (error) throw new Error(`Error registrando venta: ${error.message}`);
