@@ -8,7 +8,8 @@ import { PurchaseCard } from '@/components/dashboard/PurchaseCard';
 import { getUserPurchases, getUserStats } from '@/app/actions/user-data';
 import type { UserPurchase } from '@/app/actions/user-data';
 import type { UserStats } from '@/app/actions/user-data';
-import { SORTEO_PRIZE, SORTEO_DATE } from '@/lib/constants';
+import { checkPromo3x1Eligibility } from '@/app/actions/check-3x1-eligibility';
+import { SORTEO_PRIZE, SORTEO_DATE, PROMO_3X1_END } from '@/lib/constants';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,6 +22,7 @@ export default function MisBoletosPage() {
   const [userName, setUserName] = useState('');
   const [purchases, setPurchases] = useState<UserPurchase[]>([]);
   const [stats, setStats] = useState<UserStats>({ totalBoletos: 0, totalGastado: 0, totalCompras: 0 });
+  const [promo3x1Eligible, setPromo3x1Eligible] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -41,12 +43,16 @@ export default function MisBoletosPage() {
       setUserName(name);
 
       if (phone) {
-        const [purchaseData, statsData] = await Promise.all([
+        const [purchaseData, statsData, eligibility] = await Promise.all([
           getUserPurchases(phone),
           getUserStats(phone),
+          new Date() <= PROMO_3X1_END
+            ? checkPromo3x1Eligibility(phone)
+            : Promise.resolve({ eligible: false }),
         ]);
         setPurchases(purchaseData);
         setStats(statsData);
+        setPromo3x1Eligible(eligibility.eligible);
       }
 
       setLoading(false);
@@ -92,6 +98,28 @@ export default function MisBoletosPage() {
             {userName.split(' ')[0]} <span className="inline-block animate-float">👋</span>
           </h1>
         </div>
+
+        {/* Promo 3x1 CTA — solo si elegible y promo vigente */}
+        {promo3x1Eligible && (
+          <Link
+            href="/promo-3x1"
+            className="group relative overflow-hidden block rounded-2xl border border-[#d4af37]/50 bg-gradient-to-r from-[#d4af37]/20 via-[#d4af37]/10 to-[#d4af37]/20 p-4 animate-slide-up hover:border-[#d4af37]/80 hover:shadow-[0_0_30px_rgba(212,175,55,0.2)] transition-all"
+            style={{ animationDelay: '0.08s' }}
+          >
+            <div className="absolute inset-0 animate-shimmer pointer-events-none" />
+            <div className="relative flex items-center gap-3">
+              <div className="bg-gradient-to-br from-[#d4af37] to-[#f5d76e] text-black font-extrabold text-xl px-3 py-2 rounded-xl shrink-0 shadow-[0_0_20px_rgba(212,175,55,0.3)] group-hover:scale-105 transition-transform">
+                3x1
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-[#d4af37] uppercase tracking-widest font-bold">Promo disponible para ti</p>
+                <p className="text-sm font-bold mt-0.5">Activa tu 3x1 · Triplica tus chances</p>
+                <p className="text-[11px] text-white/50 mt-0.5">Exclusivo · Por unica vez</p>
+              </div>
+              <span className="shrink-0 text-[#d4af37] font-bold text-lg group-hover:translate-x-1 transition-transform" aria-hidden="true">→</span>
+            </div>
+          </Link>
+        )}
 
         {/* Active raffle card */}
         <div className="relative overflow-hidden rounded-2xl border border-[#d4af37]/20 animate-slide-up" style={{ animationDelay: '0.1s' }}>
