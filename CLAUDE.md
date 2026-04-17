@@ -11,6 +11,7 @@ Next.js 16 (App Router, standalone output) + Tailwind 4 + Supabase + Twilio Veri
 
 ## Quirks Easypanel (CRÍTICOS — descubiertos a golpes)
 - **Template "App" inyecta `PORT=80`** en runtime sobrescribiendo `ENV PORT=3000` del Dockerfile. Fix: `CMD ["sh", "-c", "PORT=3000 node server.js"]`
+- **Proxy port del dominio es independiente del CMD**: el CMD controla dónde escucha el container; el campo **Port** en `Domains` → Edit del dominio controla a qué puerto apunta Traefik. Si los commits anteriores dejaron al container en puerto 80 y luego cambiaste el CMD a 3000, **también tenés que cambiar el Port del dominio a 3000** o seguirás viendo 502 / "Service is not reachable" aunque los logs muestren `Ready on port 3000`.
 - **Build args NO expuestos en UI**: hardcodear `NEXT_PUBLIC_*` con `ENV` en Dockerfile (anon key es publicable)
 - **Campo "File" del Build** debe decir `Dockerfile` explícito. Vacío = error `open code: no such file or directory`
 - Cada rama tiene Dockerfile con valores distintos de `NEXT_PUBLIC_*` (DEV vs PROD)
