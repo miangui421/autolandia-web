@@ -27,13 +27,13 @@ export default function Promo3x1Page() {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push('/login?next=/promo-3x1');
+        router.push('/login');
         return;
       }
 
       const hasProfile = !!user.user_metadata?.nombre && !!user.user_metadata?.ci;
       if (!hasProfile) {
-        router.push('/login?next=/promo-3x1');
+        router.push('/login');
         return;
       }
 
