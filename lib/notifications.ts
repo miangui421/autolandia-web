@@ -19,6 +19,38 @@ export interface TelegramSaleNotification {
   comprobanteUrl: string;
 }
 
+export interface TelegramSorteoNotification {
+  sorteoId: string;
+  titulo: string;
+  premio: number;
+  ganadores: Array<{ nombre: string; phone: string; ticket_count: number; pick_order: number }>;
+  poolCount: number;
+}
+
+export async function notifyTelegramSorteo(data: TelegramSorteoNotification): Promise<void> {
+  try {
+    const ganadoresLines = data.ganadores
+      .map((g) => `  ${g.pick_order}. <b>${g.nombre}</b> (${g.phone}) — ${g.ticket_count} boletos`)
+      .join('\n');
+    const msg = [
+      `🎉 <b>SORTEO EJECUTADO</b>`,
+      ``,
+      `📝 ${data.titulo}`,
+      `🆔 <code>${data.sorteoId}</code>`,
+      `💰 Premio: ${data.premio.toLocaleString('es-PY')} Gs`,
+      `👥 Pool: ${data.poolCount} participantes`,
+      ``,
+      `🏆 Ganador${data.ganadores.length > 1 ? 'es' : ''}:`,
+      ganadoresLines,
+      ``,
+      `🔗 Recibo publico: https://autolandia.com.py/sorteo/${data.sorteoId}`,
+    ].join('\n');
+    await getBot().api.sendMessage(process.env.TELEGRAM_CHAT_ID!, msg, { parse_mode: 'HTML' });
+  } catch (err) {
+    console.error('Error notificando sorteo por Telegram:', err);
+  }
+}
+
 export async function notifyTelegramSale(data: TelegramSaleNotification): Promise<void> {
   try {
     const caption = [
