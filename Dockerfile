@@ -20,6 +20,8 @@ COPY . .
 ENV NEXT_PUBLIC_SUPABASE_URL=https://jyytukfcnembucompttu.supabase.co
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5eXR1a2ZjbmVtYnVjb21wdHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNzIzMjksImV4cCI6MjA4NzY0ODMyOX0.3kPTa2SFAp5lGLbryWkL3_XrU8dyjbjwmIPIHlOzJP4
 ENV NEXT_TELEMETRY_DISABLED=1
+# Heap size para tsc en build: default 2GB no alcanza con recharts + next 16 + todo el proyecto
+ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
 
 # ─── Stage 3: runner ──────────────────────────────────────────
