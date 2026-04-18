@@ -1,7 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { createServerClient as createSSRClient } from '@supabase/ssr';
 import { createServerClient } from './supabase-server';
 
 const COOKIE_NAME = 'admin_totp_ok';
@@ -87,33 +86,43 @@ export function extractPhone(user: {
 }
 
 /**
- * Para usar en server components. Redirige si falta cualquiera de:
- * sesion Supabase, whitelist admin, cookie TOTP valida.
+ * Para usar en server components y server actions. La cookie TOTP es la prueba
+ * de admin: esta firmada server-side con HMAC, incluye el phone, expira en 12h.
+ * Si no esta presente/valida, redirige a /admin/login (que maneja el caso de
+ * sesion Supabase faltante y pide el codigo TOTP).
+ *
+ * Defense in depth: ademas de verificar la firma y expiry, re-verifica que el
+ * phone siga en admin_users (por si lo removiste de la whitelist).
  */
 export async function requireAdmin(): Promise<{ phone: string; nombre: string }> {
   const cookieStore = await cookies();
-  const supabase = createSSRClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: () => {
-          // Server components no pueden setear cookies. Ok para lectura.
-        },
-      },
-    },
-  );
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
+  const raw = cookieStore.get(COOKIE_NAME)?.value;
+  if (!raw) redirect('/admin/login');
 
-  const phone = extractPhone(user);
-  if (!phone) redirect('/');
+  const parts = raw.split('.');
+  if (parts.length !== 3) redirect('/admin/login');
+  const [phone, ts, sig] = parts;
+
+  const expected = sign(`${phone}.${ts}`);
+  let sigBuf: Buffer;
+  let expBuf: Buffer;
+  try {
+    sigBuf = Buffer.from(sig, 'hex');
+    expBuf = Buffer.from(expected, 'hex');
+  } catch {
+    redirect('/admin/login');
+  }
+  if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
+    redirect('/admin/login');
+  }
+
+  const ageSec = (Date.now() - parseInt(ts, 10)) / 1000;
+  if (Number.isNaN(ageSec) || ageSec > COOKIE_MAX_AGE_SEC) {
+    redirect('/admin/login');
+  }
 
   const admin = await isWhitelistedAdmin(phone);
-  if (!admin.ok) redirect('/');
-
-  if (!(await hasValidTotpCookie(phone))) redirect('/admin/login');
+  if (!admin.ok) redirect('/admin/login');
 
   return { phone, nombre: admin.nombre! };
 }
