@@ -9,6 +9,7 @@ import { getUserPurchases, getUserStats } from '@/app/actions/user-data';
 import type { UserPurchase } from '@/app/actions/user-data';
 import type { UserStats } from '@/app/actions/user-data';
 import { checkPromo3x1Eligibility } from '@/app/actions/check-3x1-eligibility';
+import { isAdminPhone } from '@/app/actions/is-admin';
 import { SORTEO_PRIZE, SORTEO_DATE, PROMO_3X1_END } from '@/lib/constants';
 
 const supabase = createClient(
@@ -23,6 +24,7 @@ export default function MisBoletosPage() {
   const [purchases, setPurchases] = useState<UserPurchase[]>([]);
   const [stats, setStats] = useState<UserStats>({ totalBoletos: 0, totalGastado: 0, totalCompras: 0 });
   const [promo3x1Eligible, setPromo3x1Eligible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -43,16 +45,23 @@ export default function MisBoletosPage() {
       setUserName(name);
 
       if (phone) {
-        const [purchaseData, statsData, eligibility] = await Promise.all([
+        // Normalizar phone a 595XXXXXXXXX para check admin
+        let normalized = phone.replace(/\D/g, '');
+        if (normalized.startsWith('0')) normalized = '595' + normalized.slice(1);
+        if (!normalized.startsWith('595') && normalized.length === 9) normalized = '595' + normalized;
+
+        const [purchaseData, statsData, eligibility, adminCheck] = await Promise.all([
           getUserPurchases(phone),
           getUserStats(phone),
           new Date() <= PROMO_3X1_END
             ? checkPromo3x1Eligibility(phone)
             : Promise.resolve({ eligible: false }),
+          isAdminPhone(normalized),
         ]);
         setPurchases(purchaseData);
         setStats(statsData);
         setPromo3x1Eligible(eligibility.eligible);
+        setIsAdmin(adminCheck);
       }
 
       setLoading(false);
@@ -84,9 +93,19 @@ export default function MisBoletosPage() {
           <Link href="/" className="text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#d4af37] to-[#f5d76e]">
             AUTOLANDIA
           </Link>
-          <button onClick={handleLogout} className="text-xs text-white/40 hover:text-white/60 transition-colors border border-white/10 px-3 py-1.5 rounded-lg">
-            Cerrar sesion
-          </button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="text-xs font-bold text-[#d4af37] border border-[#d4af37]/40 px-3 py-1.5 rounded-lg hover:bg-[#d4af37]/10 transition-colors"
+              >
+                ⚙️ Admin
+              </Link>
+            )}
+            <button onClick={handleLogout} className="text-xs text-white/40 hover:text-white/60 transition-colors border border-white/10 px-3 py-1.5 rounded-lg">
+              Cerrar sesion
+            </button>
+          </div>
         </div>
       </nav>
 

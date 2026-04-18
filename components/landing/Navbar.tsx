@@ -3,15 +3,30 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { isAdminPhone } from '@/app/actions/is-admin';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 );
 
+function extractPhone(user: { phone?: string | null; email?: string | null; user_metadata?: { telefono?: string | null } | null }): string {
+  let raw = user.user_metadata?.telefono || user.phone || '';
+  if (!raw && user.email?.endsWith('@autolandia.internal')) {
+    const m = user.email.match(/user\.(\d+)@/);
+    if (m) raw = m[1];
+  }
+  const clean = (raw || '').replace(/\D/g, '');
+  let local = clean;
+  if (local.startsWith('595')) local = local.slice(3);
+  if (local.startsWith('0')) local = local.slice(1);
+  return local ? '595' + local : '';
+}
+
 export function Navbar() {
   const router = useRouter();
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -22,6 +37,11 @@ export function Navbar() {
       if (user) {
         const name = user.user_metadata?.nombre || '';
         setFirstName(name.split(' ')[0] || 'Mi cuenta');
+        const phone = extractPhone(user);
+        if (phone) {
+          const admin = await isAdminPhone(phone);
+          setIsAdmin(admin);
+        }
       }
       setLoaded(true);
     }
@@ -87,7 +107,7 @@ export function Navbar() {
             </button>
 
             {open && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#0f0f15] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+              <div className="absolute right-0 mt-2 w-52 bg-[#0f0f15] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                 <Link
                   href="/mis-boletos"
                   onClick={() => setOpen(false)}
@@ -96,6 +116,16 @@ export function Navbar() {
                   <span>🎟️</span>
                   <span>Mis boletos</span>
                 </Link>
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-[#d4af37] hover:bg-[#d4af37]/5 transition-colors border-b border-white/5"
+                  >
+                    <span>⚙️</span>
+                    <span>Panel admin</span>
+                  </Link>
+                )}
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-3 text-sm text-white/60 hover:bg-white/5 hover:text-white/90 transition-colors"
