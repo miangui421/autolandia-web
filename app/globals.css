@@ -72,3 +72,39 @@ input:focus {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
 }
+
+/* ─── Sorteador animations ──────────────────────────────── */
+
+@keyframes sorteo-slot-scroll {
+  from { transform: translateY(var(--slot-from, 0)); }
+  to { transform: translateY(var(--slot-to, -3000px)); }
+}
+
+@keyframes sorteo-flash {
+  0% { opacity: 0; }
+  20% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+@keyframes sorteo-countdown-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  40% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes sorteo-reveal-name {
+  0% { transform: scale(0.3); opacity: 0; filter: blur(20px); }
+  60% { transform: scale(1.1); opacity: 1; filter: blur(0); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+
+@keyframes confetti-piece {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+/* Fullscreen CSS: oculta controles admin cuando esta en fullscreen */
+:fullscreen .hide-in-fullscreen,
+:-webkit-full-screen .hide-in-fullscreen {
+  display: none !important;
+}
