@@ -118,6 +118,87 @@ export interface SheetsSaleRow {
   mensajeInicial: string;
 }
 
+/**
+ * Elimina una fila de la hoja "Ventas" que matchee el ticketId (columna C).
+ * Retorna true si elimino una fila, false si no la encontro.
+ * Si hay multiples matches (no deberia pasar si los ticketIds son unicos), elimina el primero.
+ */
+export async function deleteSaleFromSheets(ticketId: string): Promise<boolean> {
+  try {
+    const sheets = google.sheets({ version: 'v4', auth: getAuth() });
+    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
+
+    // Obtener sheet ID de "Ventas"
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    const ventasSheet = meta.data.sheets?.find((s) => s.properties?.title === 'Ventas');
+    if (!ventasSheet?.properties?.sheetId) return false;
+
+    // Leer columna C completa para encontrar el ticketId
+    const colC = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: 'Ventas!C:C',
+    });
+    const rows = colC.data.values ?? [];
+    const rowIdx = rows.findIndex((r) => r[0] === ticketId);
+    if (rowIdx < 0) return false;
+
+    // deleteDimension usa indices 0-based (incluye header si esta en la hoja)
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: ventasSheet.properties.sheetId,
+                dimension: 'ROWS',
+                startIndex: rowIdx,
+                endIndex: rowIdx + 1,
+              },
+            },
+          },
+        ],
+      },
+    });
+    return true;
+  } catch (err) {
+    console.error('Error deleteSaleFromSheets:', err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+export interface TelegramTicketDeleteNotification {
+  ticketId: string;
+  nombreCompleto: string;
+  telefono: string;
+  ci: string;
+  monto: number;
+  cantidad: number;
+  numerosAsignados: string;
+  deletedByPhone: string;
+  sheetsDeleted: boolean;
+}
+
+export async function notifyTelegramTicketDeleted(data: TelegramTicketDeleteNotification): Promise<void> {
+  try {
+    const msg = [
+      `🗑️ <b>TICKET ELIMINADO</b>`,
+      ``,
+      `🎫 ${data.ticketId}`,
+      `👤 ${data.nombreCompleto} (CI: ${data.ci})`,
+      `📱 ${data.telefono}`,
+      `🔢 ${data.cantidad} boleto(s) · 💰 ${data.monto.toLocaleString('es-PY')} Gs`,
+      `🎟️ Numeros liberados: ${data.numerosAsignados}`,
+      ``,
+      `👮 Admin: ${data.deletedByPhone}`,
+      `📊 Sheets: ${data.sheetsDeleted ? '✓ fila eliminada' : '⚠️ NO se encontro fila'}`,
+    ].join('\n');
+    await getBot().api.sendMessage(process.env.TELEGRAM_CHAT_ID!, msg, { parse_mode: 'HTML' });
+  } catch (err) {
+    console.error('Error notificando ticket-delete por Telegram:', err);
+  }
+}
+
 export async function appendSaleToSheets(row: SheetsSaleRow): Promise<void> {
   try {
     const sheets = google.sheets({ version: 'v4', auth: getAuth() });
