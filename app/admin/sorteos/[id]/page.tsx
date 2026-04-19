@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/admin-auth';
 import { getSorteoAdmin } from '@/app/actions/sorteo';
 import { Sorteador } from '@/components/admin/Sorteador';
 import { MarkPaidDialog } from '@/components/admin/MarkPaidDialog';
+import { DeleteSorteoDialog } from '@/components/admin/DeleteSorteoDialog';
 import { formatGs } from '@/lib/calculator';
 
 export const dynamic = 'force-dynamic';
@@ -64,6 +65,7 @@ export default async function SorteoExecutionPage({ params }: { params: Promise<
           >
             Ver recibo publico ↗
           </Link>
+          <DeleteSorteoDialog sorteoId={sorteo.sorteo_id} titulo={sorteo.titulo} />
         </div>
 
         <div className="mt-3 pt-3 border-t border-white/10">
