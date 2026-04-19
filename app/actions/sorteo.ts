@@ -1,7 +1,7 @@
 'use server';
 import { createServerClient } from '@/lib/supabase-server';
 import { requireAdmin } from '@/lib/admin-auth';
-import { queryPool, type SorteoFiltros, type PoolEntry } from '@/lib/sorteo-pool';
+import { queryPool, queryPoolWithBreakdown, type SorteoFiltros, type PoolEntry } from '@/lib/sorteo-pool';
 import { pickWinners } from '@/lib/sorteo-random';
 import { notifyTelegramSorteo } from '@/lib/notifications';
 
@@ -9,11 +9,16 @@ import { notifyTelegramSorteo } from '@/lib/notifications';
 export interface PoolPreview {
   count: number;
   sampleNombres: string[];
+  breakdown: {
+    total_unique: number;
+    after_min_boletos: number;
+    excluded_prev_winners: number;
+  };
 }
 
 export async function previewSorteoPool(filtros: SorteoFiltros): Promise<PoolPreview> {
   await requireAdmin();
-  const pool = await queryPool(filtros);
+  const { pool, breakdown } = await queryPoolWithBreakdown(filtros);
   const sample = pool
     .slice(0, 5)
     .map((p) => {
@@ -22,7 +27,7 @@ export async function previewSorteoPool(filtros: SorteoFiltros): Promise<PoolPre
       const lastInitial = parts[parts.length - 1]?.[0] || '';
       return parts.length > 1 ? `${first} ${lastInitial}.` : first;
     });
-  return { count: pool.length, sampleNombres: sample };
+  return { count: pool.length, sampleNombres: sample, breakdown };
 }
 
 // ─── Create + execute ─────────────────────────────────────────

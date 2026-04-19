@@ -23,7 +23,15 @@ function normalizePhone(raw: string): string {
   return local ? '595' + local : '';
 }
 
-export async function queryPool(filtros: SorteoFiltros): Promise<PoolEntry[]> {
+export interface PoolBreakdown {
+  total_unique: number;           // personas unicas en rango+canal (antes de cualquier filtro extra)
+  after_min_boletos: number;      // despues de aplicar min_boletos
+  excluded_prev_winners: number;  // cuantos fueron excluidos por ganar antes
+}
+
+export async function queryPoolWithBreakdown(
+  filtros: SorteoFiltros,
+): Promise<{ pool: PoolEntry[]; breakdown: PoolBreakdown }> {
   const supabase = createServerClient();
   let q = supabase
     .from('ventas')
@@ -56,11 +64,14 @@ export async function queryPool(filtros: SorteoFiltros): Promise<PoolEntry[]> {
     }
   }
 
+  const total_unique = map.size;
   let pool = Array.from(map.values());
   if (filtros.min_boletos && filtros.min_boletos > 0) {
     pool = pool.filter((p) => p.ticket_count >= filtros.min_boletos!);
   }
+  const after_min_boletos = pool.length;
 
+  let excluded_prev_winners = 0;
   if (filtros.excluir_prev_ganadores) {
     const { data: sorteos } = await supabase.from('sorteos').select('ganadores');
     const prevWinners = new Set<string>();
@@ -68,8 +79,16 @@ export async function queryPool(filtros: SorteoFiltros): Promise<PoolEntry[]> {
       const gs = (s.ganadores as { phone: string }[]) ?? [];
       for (const g of gs) prevWinners.add(g.phone);
     }
+    const before = pool.length;
     pool = pool.filter((p) => !prevWinners.has(p.phone));
+    excluded_prev_winners = before - pool.length;
   }
 
+  return { pool, breakdown: { total_unique, after_min_boletos, excluded_prev_winners } };
+}
+
+export async function queryPool(filtros: SorteoFiltros): Promise<PoolEntry[]> {
+  const { pool } = await queryPoolWithBreakdown(filtros);
   return pool;
 }
+

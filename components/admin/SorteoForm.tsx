@@ -23,7 +23,11 @@ export function SorteoForm() {
   const [ponderar, setPonderar] = useState(false);
   const [cantidadGanadores, setCantidadGanadores] = useState(1);
 
-  const [preview, setPreview] = useState<{ count: number; sampleNombres: string[] } | null>(null);
+  const [preview, setPreview] = useState<{
+    count: number;
+    sampleNombres: string[];
+    breakdown: { total_unique: number; after_min_boletos: number; excluded_prev_winners: number };
+  } | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -44,7 +48,11 @@ export function SorteoForm() {
         setPreview(res);
       } catch (e) {
         console.error('preview error:', e);
-        setPreview({ count: 0, sampleNombres: [] });
+        setPreview({
+          count: 0,
+          sampleNombres: [],
+          breakdown: { total_unique: 0, after_min_boletos: 0, excluded_prev_winners: 0 },
+        });
       }
       setPreviewing(false);
     }, 500);
@@ -138,6 +146,7 @@ export function SorteoForm() {
               onChange={(e) => setFechaDesde(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
             />
+            <p className="text-[11px] text-[#d4af37]/70 mt-1 font-mono">= {formatDMY(fechaDesde)}</p>
           </Field>
           <Field label="Fecha hasta">
             <input
@@ -146,6 +155,7 @@ export function SorteoForm() {
               onChange={(e) => setFechaHasta(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
             />
+            <p className="text-[11px] text-[#d4af37]/70 mt-1 font-mono">= {formatDMY(fechaHasta)}</p>
           </Field>
         </div>
         <Field label="Minimo de boletos (opcional)">
@@ -225,6 +235,33 @@ export function SorteoForm() {
             <p className="text-xs text-white/50 uppercase tracking-wider mt-1">
               participante{preview.count !== 1 ? 's' : ''} elegible{preview.count !== 1 ? 's' : ''}
             </p>
+
+            {/* Breakdown: mostrar cuando hay filtros que redujeron el pool */}
+            {(preview.breakdown.total_unique !== preview.count) && (
+              <div className="mt-3 pt-3 border-t border-white/5 space-y-1 text-[11px] text-white/50">
+                <BreakdownLine label="Personas unicas en rango" value={preview.breakdown.total_unique} />
+                {preview.breakdown.after_min_boletos !== preview.breakdown.total_unique && (
+                  <BreakdownLine
+                    label={`Con ≥${minBoletos} boletos`}
+                    value={preview.breakdown.after_min_boletos}
+                    delta={preview.breakdown.after_min_boletos - preview.breakdown.total_unique}
+                  />
+                )}
+                {preview.breakdown.excluded_prev_winners > 0 && (
+                  <BreakdownLine
+                    label="Ganadores previos excluidos"
+                    value={preview.breakdown.excluded_prev_winners}
+                    delta={-preview.breakdown.excluded_prev_winners}
+                    negative
+                  />
+                )}
+                <div className="pt-1 font-bold text-white/80 flex justify-between">
+                  <span>Pool final elegible</span>
+                  <span>{preview.count}</span>
+                </div>
+              </div>
+            )}
+
             {preview.sampleNombres.length > 0 && (
               <p className="text-[11px] text-white/30 mt-2">
                 Ejemplo: {preview.sampleNombres.join(', ')}
@@ -266,4 +303,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
+}
+
+function BreakdownLine({ label, value, delta, negative }: { label: string; value: number; delta?: number; negative?: boolean }) {
+  return (
+    <div className="flex justify-between">
+      <span>{label}</span>
+      <span className="flex items-center gap-2">
+        {delta !== undefined && delta !== 0 && (
+          <span className={`text-[10px] ${negative ? 'text-red-400' : 'text-yellow-400'}`}>
+            {delta > 0 ? '+' : ''}{delta}
+          </span>
+        )}
+        <span className="font-mono">{value}</span>
+      </span>
+    </div>
+  );
+}
+
+/** Convierte ISO YYYY-MM-DD a DD/MM/YYYY para display. */
+function formatDMY(iso: string): string {
+  if (!iso || iso.length < 10) return '—';
+  const [y, m, d] = iso.split('-');
+  if (!y || !m || !d) return '—';
+  return `${d}/${m}/${y}`;
 }
