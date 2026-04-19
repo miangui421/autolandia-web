@@ -262,12 +262,6 @@ export function SorteoForm() {
               </div>
             )}
 
-            {preview.sampleNombres.length > 0 && (
-              <p className="text-[11px] text-white/30 mt-2">
-                {preview.sampleNombres.join(', ')}
-                {preview.count > preview.sampleNombres.length && '...'}
-              </p>
-            )}
             {preview.count < cantidadGanadores && (
               <p className="text-xs text-red-400 mt-3 font-semibold">
                 ⚠️ Pool insuficiente para {cantidadGanadores} ganador{cantidadGanadores > 1 ? 'es' : ''}
