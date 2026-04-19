@@ -1,10 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { deleteSorteo } from '@/app/actions/sorteo';
 
 export function DeleteSorteoDialog({ sorteoId, titulo }: { sorteoId: string; titulo: string }) {
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -13,13 +11,14 @@ export function DeleteSorteoDialog({ sorteoId, titulo }: { sorteoId: string; tit
     setLoading(true);
     setError('');
     const res = await deleteSorteo(sorteoId);
-    setLoading(false);
     if (!res.success) {
+      setLoading(false);
       setError(res.error || 'Error eliminando');
       return;
     }
-    router.push('/admin');
-    router.refresh();
+    // Hard navigation: la pagina actual /admin/sorteos/[id] ya no existe en DB.
+    // router.push puede trabarse intentando re-renderizar. window.location garantiza navegacion.
+    window.location.href = '/admin';
   }
 
   return (
