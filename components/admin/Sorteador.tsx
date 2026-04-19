@@ -188,7 +188,7 @@ export function Sorteador({
       )}
 
       {/* Confetti en reveal */}
-      <Confetti active={phase === 'reveal'} duration={4500} />
+      <Confetti active={phase === 'reveal'} />
     </div>
   );
 }
