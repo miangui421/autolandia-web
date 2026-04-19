@@ -19,6 +19,13 @@ input:focus {
   border-color: rgba(212, 175, 55, 0.5);
 }
 
+/* Native date picker icon: forzar visible en dark mode */
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+  color-scheme: dark;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0a0a0f; }
