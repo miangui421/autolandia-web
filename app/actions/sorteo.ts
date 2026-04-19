@@ -125,16 +125,35 @@ export async function createAndExecuteSorteo(input: CreateSorteoInput): Promise<
   });
   if (insertError) return { success: false, error: `DB insert error: ${insertError.message}` };
 
-  // Notify Telegram (no bloquea)
-  await notifyTelegramSorteo({
-    sorteoId,
-    titulo: input.titulo,
-    premio: input.premio_monto,
-    ganadores,
-    poolCount: pool.length,
-  }).catch((err) => console.error('notifyTelegramSorteo:', err));
-
+  // Telegram se notifica SOLO cuando el admin ejecuta el sorteo en la pantalla en vivo
+  // (via announceSorteo) para que coincida con el anuncio al publico.
   return { success: true, sorteo_id: sorteoId };
+}
+
+// ─── Announce (enviar Telegram al ejecutar en vivo) ──────────
+export async function announceSorteo(sorteoId: string): Promise<{ success: boolean; error?: string }> {
+  await requireAdmin();
+  const supabase = createServerClient();
+  const { data } = await supabase
+    .from('sorteos')
+    .select('sorteo_id, titulo, premio_monto, ganadores, pool_count')
+    .eq('sorteo_id', sorteoId)
+    .maybeSingle();
+  if (!data) return { success: false, error: 'Sorteo no encontrado' };
+
+  try {
+    await notifyTelegramSorteo({
+      sorteoId: data.sorteo_id,
+      titulo: data.titulo,
+      premio: data.premio_monto,
+      ganadores: data.ganadores as Winner[],
+      poolCount: data.pool_count,
+    });
+    return { success: true };
+  } catch (e) {
+    console.error('announceSorteo:', e);
+    return { success: false, error: 'Error enviando a Telegram' };
+  }
 }
 
 // ─── Mark paid ────────────────────────────────────────────────
