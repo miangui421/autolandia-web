@@ -124,25 +124,46 @@ export interface SheetsSaleRow {
  * Si hay multiples matches (no deberia pasar si los ticketIds son unicos), elimina el primero.
  */
 export async function deleteSaleFromSheets(ticketId: string): Promise<boolean> {
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
+  if (!spreadsheetId) {
+    console.error('[deleteSaleFromSheets] GOOGLE_SPREADSHEET_ID no esta seteado');
+    return false;
+  }
+  const target = ticketId.trim();
   try {
     const sheets = google.sheets({ version: 'v4', auth: getAuth() });
-    const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
 
-    // Obtener sheet ID de "Ventas"
+    // Encontrar sheet llamada "Ventas" (case-insensitive por si acaso)
     const meta = await sheets.spreadsheets.get({ spreadsheetId });
-    const ventasSheet = meta.data.sheets?.find((s) => s.properties?.title === 'Ventas');
-    if (!ventasSheet?.properties?.sheetId) return false;
+    const allSheets = (meta.data.sheets ?? []).map((s) => ({
+      title: s.properties?.title ?? '',
+      sheetId: s.properties?.sheetId,
+    }));
+    console.log('[deleteSaleFromSheets] sheets disponibles:', allSheets.map((s) => s.title));
+    const ventasSheet = allSheets.find((s) => s.title.toLowerCase() === 'ventas');
+    if (!ventasSheet || ventasSheet.sheetId === undefined || ventasSheet.sheetId === null) {
+      console.error('[deleteSaleFromSheets] no encontre sheet "Ventas". Disponibles:', allSheets.map((s) => s.title));
+      return false;
+    }
 
-    // Leer columna C completa para encontrar el ticketId
+    // Leer col C entera (donde la web/bot escriben ticket_id)
     const colC = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Ventas!C:C',
+      range: `${ventasSheet.title}!C:C`,
     });
     const rows = colC.data.values ?? [];
-    const rowIdx = rows.findIndex((r) => r[0] === ticketId);
-    if (rowIdx < 0) return false;
+    console.log(`[deleteSaleFromSheets] buscando "${target}" en ${rows.length} filas de col C`);
 
-    // deleteDimension usa indices 0-based (incluye header si esta en la hoja)
+    // Match con trim para defender contra trailing whitespace
+    const rowIdx = rows.findIndex((r) => String(r[0] ?? '').trim() === target);
+    if (rowIdx < 0) {
+      // Log muestra de lo que si encontramos para debug
+      const sample = rows.slice(0, 5).map((r) => String(r[0] ?? '').trim()).join(' | ');
+      console.error(`[deleteSaleFromSheets] ticket "${target}" no encontrado en col C. Muestra: ${sample}`);
+      return false;
+    }
+
+    console.log(`[deleteSaleFromSheets] eliminando fila ${rowIdx + 1} (0-idx ${rowIdx})`);
     await sheets.spreadsheets.batchUpdate({
       spreadsheetId,
       requestBody: {
@@ -150,7 +171,7 @@ export async function deleteSaleFromSheets(ticketId: string): Promise<boolean> {
           {
             deleteDimension: {
               range: {
-                sheetId: ventasSheet.properties.sheetId,
+                sheetId: ventasSheet.sheetId,
                 dimension: 'ROWS',
                 startIndex: rowIdx,
                 endIndex: rowIdx + 1,
@@ -160,9 +181,10 @@ export async function deleteSaleFromSheets(ticketId: string): Promise<boolean> {
         ],
       },
     });
+    console.log(`[deleteSaleFromSheets] OK fila eliminada`);
     return true;
   } catch (err) {
-    console.error('Error deleteSaleFromSheets:', err instanceof Error ? err.message : err);
+    console.error('[deleteSaleFromSheets] error:', err instanceof Error ? err.message : err);
     return false;
   }
 }

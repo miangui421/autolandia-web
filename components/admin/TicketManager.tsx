@@ -11,7 +11,6 @@ export function TicketManager() {
   const [error, setError] = useState('');
 
   const [confirmTicket, setConfirmTicket] = useState<TicketRow | null>(null);
-  const [confirmInput, setConfirmInput] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [result, setResult] = useState<{ ticketId: string; liberados: number; sheetsDeleted: boolean } | null>(null);
 
@@ -32,10 +31,6 @@ export function TicketManager() {
 
   async function handleConfirmDelete() {
     if (!confirmTicket) return;
-    if (confirmInput.trim().toUpperCase() !== confirmTicket.ticket_id.toUpperCase()) {
-      setError(`Tienes que tipear exactamente "${confirmTicket.ticket_id}" para confirmar`);
-      return;
-    }
     setDeleting(true);
     setError('');
     const res = await deleteTicket(confirmTicket.ticket_id);
@@ -51,33 +46,27 @@ export function TicketManager() {
     });
     setResults((prev) => prev.filter((r) => r.ticket_id !== confirmTicket.ticket_id));
     setConfirmTicket(null);
-    setConfirmInput('');
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Search */}
-      <div className="glass-card p-5">
-        <label className="block text-[11px] text-white/50 uppercase tracking-wider mb-2">
-          Buscar por ticket ID, telefono, CI o nombre
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="TK-1234 o 0981... o CI"
-            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
-          />
-          <button
-            onClick={handleSearch}
-            disabled={searching || !query.trim()}
-            className="bg-gradient-to-r from-[#d4af37] to-[#c4a030] text-black text-sm font-bold px-6 py-3 rounded-xl disabled:opacity-50"
-          >
-            {searching ? '...' : 'Buscar'}
-          </button>
-        </div>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+          placeholder="TK-1234 · 0981234567 · CI · nombre"
+          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
+        />
+        <button
+          onClick={handleSearch}
+          disabled={searching || !query.trim()}
+          className="bg-gradient-to-r from-[#d4af37] to-[#c4a030] text-black text-sm font-bold px-6 py-3 rounded-xl disabled:opacity-50"
+        >
+          {searching ? '...' : 'Buscar'}
+        </button>
       </div>
 
       {error && (
@@ -91,21 +80,19 @@ export function TicketManager() {
           <p className="text-green-300 text-sm font-bold">✓ {result.ticketId} eliminado</p>
           <p className="text-xs text-white/60 mt-1">
             {result.liberados} numeros liberados ·{' '}
-            {result.sheetsDeleted ? 'fila eliminada del Sheets' : '⚠️ no se encontro fila en Sheets'}
+            {result.sheetsDeleted ? 'fila eliminada del Sheets' : '⚠️ no se encontro fila en Sheets (revisa logs)'}
           </p>
         </div>
       )}
 
       {searched && results.length === 0 && (
-        <div className="glass-card p-8 text-center">
-          <p className="text-white/50">Sin resultados para "{query}"</p>
-        </div>
+        <div className="text-center py-6 text-white/40 text-sm">Sin resultados para "{query}"</div>
       )}
 
       {/* Results */}
       {results.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-white/40 uppercase tracking-wider font-bold">
+          <p className="text-[11px] text-white/40 uppercase tracking-wider font-bold">
             {results.length} resultado{results.length !== 1 ? 's' : ''}
           </p>
           {results.map((t) => (
@@ -125,33 +112,19 @@ export function TicketManager() {
               <p className="text-white/50 text-xs">
                 {confirmTicket.cantidad} boleto(s) · {formatGs(confirmTicket.monto)}
               </p>
-              <p className="text-white/40 text-[10px] font-mono">
+              <p className="text-white/40 text-[10px] font-mono break-all">
                 Numeros: {(confirmTicket.numeros_asignados ?? []).sort((a, b) => a - b).map((n) => String(n).padStart(5, '0')).join(', ')}
               </p>
             </div>
-            <p className="text-xs text-white/60 mb-3">
-              Esta accion es <b className="text-red-300">irreversible</b>. Se elimina:
+            <p className="text-xs text-white/60 mb-4">
+              Se elimina de la DB, los numeros vuelven a LIBRE, y se remueve la fila del Sheets.{' '}
+              <b className="text-red-300">Irreversible.</b>
             </p>
-            <ul className="text-xs text-white/50 space-y-1 mb-4 list-disc list-inside">
-              <li>Venta en la DB</li>
-              <li>Numeros de rifa vuelven a LIBRE</li>
-              <li>Fila en Google Sheets "Ventas"</li>
-            </ul>
-            <label className="block text-[11px] text-white/50 uppercase mb-1.5">
-              Tipea <span className="font-mono text-[#d4af37]">{confirmTicket.ticket_id}</span> para confirmar
-            </label>
-            <input
-              type="text"
-              value={confirmInput}
-              onChange={(e) => setConfirmInput(e.target.value)}
-              className="w-full bg-white/5 border border-red-500/30 rounded-xl px-4 py-3 text-sm font-mono mb-3"
-            />
             {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
             <div className="flex gap-2">
               <button
                 onClick={() => {
                   setConfirmTicket(null);
-                  setConfirmInput('');
                   setError('');
                 }}
                 className="flex-1 text-xs font-bold border border-white/10 text-white/60 py-2.5 rounded-xl"
@@ -205,7 +178,7 @@ function TicketCard({ ticket, onDelete }: { ticket: TicketRow; onDelete: () => v
         onClick={onDelete}
         className="shrink-0 text-xs font-bold text-red-300 border border-red-500/30 px-3 py-2 rounded-lg hover:bg-red-500/10"
       >
-        🗑️ Eliminar
+        🗑️
       </button>
     </div>
   );
