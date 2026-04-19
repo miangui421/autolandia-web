@@ -156,6 +156,15 @@ export async function announceSorteo(sorteoId: string): Promise<{ success: boole
   }
 }
 
+// ─── Delete (hard delete, irreversible) ──────────────────────
+export async function deleteSorteo(sorteoId: string): Promise<{ success: boolean; error?: string }> {
+  await requireAdmin();
+  const supabase = createServerClient();
+  const { error } = await supabase.from('sorteos').delete().eq('sorteo_id', sorteoId);
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
 // ─── Mark paid ────────────────────────────────────────────────
 export async function markSorteoPaid(
   sorteoId: string,
