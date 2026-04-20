@@ -48,18 +48,26 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     { onConflict: 'phone' },
   );
 
+  // Guard: validar monto antes de notificar. Si viene invalido, log y recuperar
+  // el valor correcto desde la DB via ticket_id (evitando escribir "" en Sheets).
+  let montoFinal = Number(input.monto);
+  if (!Number.isFinite(montoFinal) || montoFinal <= 0) {
+    console.error(
+      `[registerSale] monto invalido para ${result.ticketId}: "${input.monto}" (${typeof input.monto}). Recuperando de DB.`,
+    );
+    const { data: row } = await supabase.from('ventas').select('monto').eq('ticket_id', result.ticketId).maybeSingle();
+    montoFinal = Number(row?.monto ?? 0);
+  }
+
   // Notifications — must await in serverless (lambda termina sin await)
-  // Fecha en hora Paraguay (UTC-3) con formato "YYYY-MM-DD HH:mm:ss"
-  const fecha = new Date().toLocaleString('sv-SE', {
-    timeZone: 'America/Asuncion',
-  });
+  const fecha = new Date().toLocaleString('sv-SE', { timeZone: 'America/Asuncion' });
   await Promise.allSettled([
     notifyTelegramSale({
       nombreCompleto: input.nombreCompleto,
       ci: input.ci,
       telefono: input.telefono,
       cantidad: input.cantidad,
-      monto: String(input.monto),
+      monto: String(montoFinal),
       ticketId: result.ticketId,
       numerosAsignados: result.numerosAsignados,
       comprobanteUrl: input.comprobanteUrl,
@@ -70,7 +78,7 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
       ticketId: result.ticketId,
       nombreCompleto: input.nombreCompleto,
       ci: input.ci,
-      monto: String(input.monto),
+      monto: String(montoFinal),
       numerosAsignados: result.numerosAsignados,
       comprobanteUrl: input.comprobanteUrl,
       cantidad: input.cantidad,
