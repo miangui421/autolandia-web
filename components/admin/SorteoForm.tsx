@@ -129,7 +129,7 @@ export function SorteoForm() {
             type="text"
             value={premioDesc}
             onChange={(e) => setPremioDesc(e.target.value)}
-            placeholder="Ej: Transferencia bancaria"
+            placeholder="Ej: Sorteo 2da semana de abril para compradores de 3 tickets o mas"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
           />
         </Field>
