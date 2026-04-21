@@ -9,12 +9,13 @@ export const MAX_NUMERO = 59_999;
 export const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/Fe9iPH8qw779BIpIZBKnEl?mode=gi_t';
 
 export const PACKS_NORMALES: Pack[] = [
-  { cantidad: 1, precio: 20_000, descuento: '', precioPorBoleto: 20_000 },
-  { cantidad: 2, precio: 40_000, descuento: '', precioPorBoleto: 20_000 },
-  { cantidad: 3, precio: 50_000, descuento: '17% OFF', precioPorBoleto: 16_667 },
-  { cantidad: 7, precio: 100_000, descuento: '29% OFF', precioPorBoleto: 14_286, popular: true },
-  { cantidad: 11, precio: 150_000, descuento: '32% OFF', precioPorBoleto: 13_636 },
-  { cantidad: 16, precio: 200_000, descuento: '38% OFF', precioPorBoleto: 12_500 },
+  { cantidad: 1,  precio: 20_000,  descuento: '',        precioPorBoleto: 20_000 },
+  { cantidad: 2,  precio: 40_000,  descuento: '',        precioPorBoleto: 20_000 },
+  { cantidad: 3,  precio: 50_000,  descuento: '17% OFF', precioPorBoleto: 16_667, popular: true },
+  { cantidad: 10, precio: 100_000, descuento: '50% OFF', precioPorBoleto: 10_000 },
+  { cantidad: 20, precio: 150_000, descuento: '63% OFF', precioPorBoleto: 7_500 },
+  { cantidad: 30, precio: 200_000, descuento: '67% OFF', precioPorBoleto: 6_667 },
+  { cantidad: 80, precio: 500_000, descuento: '69% OFF', precioPorBoleto: 6_250 },
 ];
 
 export const PACKS_3X1: Pack[] = [
@@ -26,7 +27,10 @@ export const PACKS_3X1: Pack[] = [
   { cantidad: 30, precio: 200_000, descuento: '3x1', precioPorBoleto: 6_667 },
 ];
 
-export const PROMO_3X1_END = new Date('2026-04-30T23:59:59-04:00');
+// Promo 3x1 desactivada (pedido Paul 2026-04-21). Fecha pasada = todos los checks
+// existentes la ocultan en cascade: banner, CTA mis-boletos, pagina /promo-3x1.
+// Codigo queda intacto por si se reactiva en sorteos futuros: solo mover la fecha.
+export const PROMO_3X1_END = new Date('2026-04-20T23:59:59-04:00');
 
 export const BANK_INFO = {
   banco: 'Ueno Bank',
