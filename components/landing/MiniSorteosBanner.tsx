@@ -1,6 +1,7 @@
 'use client';
 import {
   MINI_SORTEO_DATE,
+  MINI_SORTEO_FECHA_DISPLAY,
   MINI_SORTEO_PREMIO,
   MINI_SORTEO_CANTIDAD,
   MINI_SORTEO_MIN_BOLETOS,
@@ -11,11 +12,7 @@ export function MiniSorteosBanner() {
   const now = new Date();
   if (now > MINI_SORTEO_DATE) return null;
 
-  const fechaFmt = MINI_SORTEO_DATE.toLocaleDateString('es-PY', {
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'America/Asuncion',
-  });
+  const fechaFmt = MINI_SORTEO_FECHA_DISPLAY;
 
   return (
     <div className="max-w-[600px] mx-auto mb-6 px-4 animate-slide-up">
