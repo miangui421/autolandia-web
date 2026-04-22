@@ -32,6 +32,13 @@ export const PACKS_3X1: Pack[] = [
 // Codigo queda intacto por si se reactiva en sorteos futuros: solo mover la fecha.
 export const PROMO_3X1_END = new Date('2026-04-20T23:59:59-04:00');
 
+// Mini sorteos: 3 sorteos de 500k Gs entre compradores de 3+ boletos.
+// Fecha del draw el 30 de abril. Banner se oculta automatico despues.
+export const MINI_SORTEO_DATE = new Date('2026-04-30T23:59:59-04:00');
+export const MINI_SORTEO_PREMIO = 500_000;
+export const MINI_SORTEO_CANTIDAD = 3;
+export const MINI_SORTEO_MIN_BOLETOS = 3;
+
 export const BANK_INFO = {
   banco: 'Ueno Bank',
   alias: '3415028',
