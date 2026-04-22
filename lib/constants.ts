@@ -35,6 +35,10 @@ export const PROMO_3X1_END = new Date('2026-04-20T23:59:59-04:00');
 // Mini sorteos: 3 sorteos de 500k Gs entre compradores de 3+ boletos.
 // Fecha del draw el 30 de abril. Banner se oculta automatico despues.
 export const MINI_SORTEO_DATE = new Date('2026-04-30T23:59:59-04:00');
+// Display hardcoded para evitar issues de ICU/TZ en containers Alpine
+// (toLocaleDateString a veces ignora el option timeZone). Al cambiar la fecha,
+// actualizar tambien este string.
+export const MINI_SORTEO_FECHA_DISPLAY = '30 de abril';
 export const MINI_SORTEO_PREMIO = 500_000;
 export const MINI_SORTEO_CANTIDAD = 3;
 export const MINI_SORTEO_MIN_BOLETOS = 3;
