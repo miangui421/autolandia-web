@@ -6,7 +6,7 @@ export const SORTEO_PRIZE = 'BMW Serie 5 2013';
 export const SORTEO_PRIZE_DETAIL = 'Diesel · Recién importado · Nivel premium';
 export const PRECIO_BASE = 20_000;
 export const MAX_NUMERO = 59_999;
-export const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/Fe9iPH8qw779BIpIZBKnEl?mode=gi_t';
+export const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/LsYwsk6Fgzp58QA1doCjLR?mode=gi_t';
 
 export const PACKS_NORMALES: Pack[] = [
   { cantidad: 1,  precio: 20_000,  descuento: '',        precioPorBoleto: 20_000 },
