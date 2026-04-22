@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/landing/Navbar';
 import { Hero } from '@/components/landing/Hero';
 import { PromoBanner } from '@/components/landing/PromoBanner';
+import { MiniSorteosBanner } from '@/components/landing/MiniSorteosBanner';
 import { PackGrid } from '@/components/landing/PackGrid';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { SORTEO_DATE, WHATSAPP_GROUP_LINK } from '@/lib/constants';
@@ -20,6 +21,7 @@ export default function Home() {
         ) : (
           <>
             <PromoBanner />
+            <MiniSorteosBanner />
             <div className="text-center px-4 pb-4">
               <h2 className="text-2xl font-bold">Elegi tus boletos</h2>
               <p className="text-white/50 mt-2">Mientras mas boletos, mayor descuento</p>
