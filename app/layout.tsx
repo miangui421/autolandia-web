@@ -13,6 +13,9 @@ export const metadata: Metadata = {
     description: 'Boletos desde Gs. 20.000. Sorteo: 6 de Junio.',
     type: 'website',
   },
+  other: {
+    'facebook-domain-verification': 'fenwtxcnh3fpnvbukjd962wljtngyn',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
