@@ -14,6 +14,7 @@ export function MiniSorteosBanner() {
   const fechaFmt = MINI_SORTEO_DATE.toLocaleDateString('es-PY', {
     day: 'numeric',
     month: 'long',
+    timeZone: 'America/Asuncion',
   });
 
   return (
