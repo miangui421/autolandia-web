@@ -2,6 +2,7 @@
 import { registrarVentaRandom, registrarVentaManual } from '@/lib/sale-registrar';
 import { notifyTelegramSale, appendSaleToSheets } from '@/lib/notifications';
 import { createServerClient } from '@/lib/supabase-server';
+import { sendMetaEvent } from '@/lib/meta-capi';
 import type { SaleResult } from '@/types';
 
 interface RegisterSaleInput {
@@ -48,15 +49,24 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     { onConflict: 'phone' },
   );
 
-  // Guard: validar monto antes de notificar. Si viene invalido, log y recuperar
-  // el valor correcto desde la DB via ticket_id (evitando escribir "" en Sheets).
+  // Fetch venta.id (UUID) + monto desde la DB via ticket_id.
+  // El RPC registrar_venta_web solo retorna { ticket_id, numeros_asignados },
+  // así que necesitamos una query para obtener el UUID que usamos como eventId en Meta CAPI.
+  // Aprovechamos la misma query para el guard de monto (si viene invalido).
+  const { data: ventaRow } = await supabase
+    .from('ventas')
+    .select('id, monto')
+    .eq('ticket_id', result.ticketId)
+    .maybeSingle();
+
+  const ventaId: string | undefined = ventaRow?.id;
+
   let montoFinal = Number(input.monto);
   if (!Number.isFinite(montoFinal) || montoFinal <= 0) {
     console.error(
       `[registerSale] monto invalido para ${result.ticketId}: "${input.monto}" (${typeof input.monto}). Recuperando de DB.`,
     );
-    const { data: row } = await supabase.from('ventas').select('monto').eq('ticket_id', result.ticketId).maybeSingle();
-    montoFinal = Number(row?.monto ?? 0);
+    montoFinal = Number(ventaRow?.monto ?? 0);
   }
 
   // Notifications — must await in serverless (lambda termina sin await)
@@ -88,5 +98,24 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     }),
   ]);
 
-  return result;
+  // CAPI Purchase (fire-and-forget). Usa ventas.id (UUID) como eventId para dedup
+  // con el pixel client-side. Solo dispara si pudimos resolver el UUID.
+  if (ventaId) {
+    await Promise.allSettled([
+      sendMetaEvent({
+        eventName: 'Purchase',
+        eventId: ventaId,
+        eventSourceUrl: 'https://autolandia.com.py/checkout',
+        phone: input.telefono,
+        nombreCompleto: input.nombreCompleto,
+        value: montoFinal,
+        currency: 'PYG',
+      }),
+    ]);
+  }
+
+  return {
+    ...result,
+    event_id: ventaId,
+  };
 }

@@ -51,4 +51,5 @@ export interface FraudCheckResult {
 export interface SaleResult {
   ticketId: string;
   numerosAsignados: string;
+  event_id?: string;
 }
