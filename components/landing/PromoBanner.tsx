@@ -24,7 +24,7 @@ export function PromoBanner() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-white text-[15px] leading-tight">
-              Triplica tus chances de ganar el BMW
+              Triplica tus boletos para el sorteo
             </h3>
             <p className="text-[13px] text-white/60 mt-1 leading-snug">
               Mismo precio, el triple de boletos
