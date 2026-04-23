@@ -3,16 +3,21 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const FBC_MAX_AGE_SECONDS = 60 * 60 * 24 * 90; // 90 días (convención Meta)
+// fbclid de Meta es URL-safe (base64url). Validamos para evitar poisoning de
+// la cookie _fbc si alguien manipula el query param.
+const FBCLID_REGEX = /^[A-Za-z0-9_-]{1,512}$/;
 
 export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   const fbclid = request.nextUrl.searchParams.get('fbclid');
-  if (fbclid) {
+  if (fbclid && FBCLID_REGEX.test(fbclid)) {
     const existing = request.cookies.get('_fbc')?.value;
     const expectedValue = `fb.1.${Date.now()}.${fbclid}`;
-    // Solo setear si no existe o el fbclid cambió
-    if (!existing || !existing.endsWith(`.${fbclid}`)) {
+    // Parseamos el último segmento del valor existente (formato fb.1.{ts}.{fbclid})
+    // para comparar con el nuevo fbclid. Más robusto que endsWith.
+    const existingFbclid = existing?.split('.').at(-1);
+    if (existingFbclid !== fbclid) {
       response.cookies.set('_fbc', expectedValue, {
         maxAge: FBC_MAX_AGE_SECONDS,
         sameSite: 'lax',
