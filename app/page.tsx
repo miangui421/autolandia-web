@@ -4,6 +4,7 @@ import { PromoBanner } from '@/components/landing/PromoBanner';
 import { MiniSorteosBanner } from '@/components/landing/MiniSorteosBanner';
 import { PackGrid } from '@/components/landing/PackGrid';
 import { HowItWorks } from '@/components/landing/HowItWorks';
+import { Footer } from '@/components/landing/Footer';
 import { MetaPixelTracker } from '@/components/MetaPixelTracker';
 import { SORTEO_DATE, WHATSAPP_GROUP_LINK } from '@/lib/constants';
 
@@ -50,6 +51,7 @@ export default function Home() {
           </div>
         </footer>
       </main>
+      <Footer />
     </>
   );
 }
