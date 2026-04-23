@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { sendOtp, verifyOtpAndGetToken, trackLeadCompleted } from '@/app/actions/auth-otp';
+import { generateEventId } from '@/lib/meta-event-id';
+import { trackLead } from '@/lib/pixel';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -128,7 +130,9 @@ export default function LoginPage() {
 
     // 2. Track lead en Google Sheets + Telegram (server action, non-blocking)
     const phone = normalizePhone(telefono).replace('+', '');
-    trackLeadCompleted(phone, nombre.trim(), ci.trim()).catch(console.error);
+    const eventId = generateEventId();
+    trackLead({ eventId });
+    trackLeadCompleted(phone, nombre.trim(), ci.trim(), eventId).catch(console.error);
 
     router.push('/mis-boletos');
   }

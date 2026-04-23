@@ -9,6 +9,8 @@ import { StepPayment } from '@/components/checkout/StepPayment';
 import { StepConfirmation } from '@/components/checkout/StepConfirmation';
 import { registerSale } from '@/app/actions/register-sale';
 import { formatGs } from '@/lib/calculator';
+import { trackPurchase } from '@/lib/pixel';
+import { MetaPixelTracker } from '@/components/MetaPixelTracker';
 import type { CheckoutState } from '@/types';
 
 const supabase = createClient(
@@ -97,6 +99,14 @@ function CheckoutContent() {
         isPromo3x1: state.isPromo3x1,
       });
 
+      if (result.event_id) {
+        trackPurchase({
+          eventId: result.event_id,
+          value: state.price,
+          currency: 'PYG',
+        });
+      }
+
       setState((prev) => ({
         ...prev,
         step: 4,
@@ -113,6 +123,7 @@ function CheckoutContent() {
 
   return (
     <main className="min-h-screen pb-12">
+      <MetaPixelTracker pathname="/checkout" />
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
         <a href="/" className="text-white/50 text-xl">
@@ -134,7 +145,7 @@ function CheckoutContent() {
           </div>
         )}
 
-        {state.step === 1 && <StepNumbers qty={qty} onComplete={handleNumbersComplete} />}
+        {state.step === 1 && <StepNumbers qty={qty} price={price} onComplete={handleNumbersComplete} />}
 
         {state.step === 2 && (
           <StepData
