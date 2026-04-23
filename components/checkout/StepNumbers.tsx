@@ -4,14 +4,17 @@ import { lookupNumbers } from '@/app/actions/lookup-numbers';
 import { reserveNumbers, releaseNumbers } from '@/app/actions/reserve-numbers';
 import { NumberGrid } from './NumberGrid';
 import { Button } from '@/components/ui/Button';
+import { generateEventId } from '@/lib/meta-event-id';
+import { trackInitiateCheckout } from '@/lib/pixel';
 import type { RaffleNumber } from '@/types';
 
 interface StepNumbersProps {
   qty: number;
+  price: number;
   onComplete: (selectedNumbers: number[], mode: 'manual' | 'random') => void;
 }
 
-export function StepNumbers({ qty, onComplete }: StepNumbersProps) {
+export function StepNumbers({ qty, price, onComplete }: StepNumbersProps) {
   const [mode, setMode] = useState<'manual' | 'random'>('random');
   const [search, setSearch] = useState('');
   const [numbers, setNumbers] = useState<RaffleNumber[]>([]);
@@ -120,7 +123,17 @@ export function StepNumbers({ qty, onComplete }: StepNumbersProps) {
       <Button
         className="mt-5"
         disabled={mode === 'manual' && selected.length !== qty}
-        onClick={() => onComplete(mode === 'manual' ? selected : [], mode)}
+        onClick={() => {
+          // Fire InitiateCheckout una sola vez cuando el usuario termina la
+          // selección de números. Pixel dispara inmediato (sincrónico en fbq
+          // queue) y reserveNumbers([]) con meta dispara el CAPI con el mismo
+          // eventId → Meta dedupe automáticamente. El array vacío hace skip
+          // del loop de reserva (no-op en DB); solo usa la branch del CAPI.
+          const eventId = generateEventId();
+          trackInitiateCheckout({ eventId, value: price, currency: 'PYG' });
+          reserveNumbers([], { eventId, value: price }).catch(() => {});
+          onComplete(mode === 'manual' ? selected : [], mode);
+        }}
       >
         Continuar
       </Button>

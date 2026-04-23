@@ -4,7 +4,7 @@ import { sendMetaEvent } from '@/lib/meta-capi';
 
 export async function reserveNumbers(
   numbers: number[],
-  meta?: { eventId: string; phone: string; value: number },
+  meta?: { eventId: string; phone?: string; value: number },
 ): Promise<{ success: boolean; failed: number[] }> {
   const supabase = createServerClient();
   const failed: number[] = [];
