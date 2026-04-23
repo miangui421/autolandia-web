@@ -2,6 +2,7 @@
 import { sendVerification, checkVerification } from '@/lib/twilio';
 import { createServerClient } from '@/lib/supabase-server';
 import { appendLeadToSheets } from '@/lib/notifications';
+import { sendMetaEvent } from '@/lib/meta-capi';
 
 /**
  * Envía un OTP al teléfono via Twilio Verify Service.
@@ -143,6 +144,7 @@ export async function trackLeadCompleted(
   telefono: string,
   nombre: string,
   ci: string,
+  eventId?: string,
 ): Promise<{ success: boolean }> {
   const cleanPhone = telefono.replace(/\D/g, '');
   const supabase = createServerClient();
@@ -172,6 +174,19 @@ export async function trackLeadCompleted(
   };
 
   await appendLeadToSheets(leadRow);
+
+  // 3b. CAPI Lead (fire-and-forget, solo primera vez, respeta sheet_registered idempotency)
+  if (eventId) {
+    await Promise.allSettled([
+      sendMetaEvent({
+        eventName: 'Lead',
+        eventId,
+        eventSourceUrl: 'https://autolandia.com.py/login',
+        phone: cleanPhone,
+        nombreCompleto: nombre,
+      }),
+    ]);
+  }
 
   // 4. Marcar el flag para no re-registrar
   await supabase.auth.admin.updateUserById(user.id, {
