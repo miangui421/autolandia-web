@@ -9,6 +9,13 @@ export interface DailySale {
   monto: number;
 }
 
+export interface CanalStats {
+  ventas: number;
+  total_gs: number;
+}
+
+export type PorCanal = Record<string, CanalStats>;
+
 export interface AdminStats {
   total_recaudado: number;
   total_ventas: number;
@@ -17,6 +24,7 @@ export interface AdminStats {
   boletos_totales: number;
   ultima_venta_fecha: string | null;
   daily_sales: DailySale[];
+  por_canal: PorCanal;
 }
 
 /**
@@ -39,7 +47,18 @@ export async function getAdminStats(rangeDays: 7 | 30 | 0): Promise<AdminStats> 
     boletos_totales: number;
     ultima_venta_fecha: string | null;
     daily_sales: DailySale[] | null;
+    por_canal: Record<string, { ventas: number | string; total_gs: number | string }> | null;
   };
+
+  const porCanal: PorCanal = {};
+  if (raw.por_canal && typeof raw.por_canal === 'object') {
+    for (const [canal, stats] of Object.entries(raw.por_canal)) {
+      porCanal[canal] = {
+        ventas: Number(stats?.ventas) || 0,
+        total_gs: Number(stats?.total_gs) || 0,
+      };
+    }
+  }
 
   return {
     total_recaudado: Number(raw.total_recaudado) || 0,
@@ -56,5 +75,6 @@ export async function getAdminStats(rangeDays: 7 | 30 | 0): Promise<AdminStats> 
           monto: Number(d.monto) || 0,
         }))
       : [],
+    por_canal: porCanal,
   };
 }
