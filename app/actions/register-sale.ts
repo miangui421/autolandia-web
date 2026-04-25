@@ -1,8 +1,10 @@
 'use server';
+import { cookies } from 'next/headers';
 import { registrarVentaRandom, registrarVentaManual } from '@/lib/sale-registrar';
 import { notifyTelegramSale, appendSaleToSheets } from '@/lib/notifications';
 import { createServerClient } from '@/lib/supabase-server';
 import { sendMetaEvent } from '@/lib/meta-capi';
+import { UTM_COOKIE_NAME, parseUtmCookie } from '@/lib/utm-tracking';
 import type { SaleResult } from '@/types';
 
 interface RegisterSaleInput {
@@ -19,6 +21,9 @@ interface RegisterSaleInput {
 }
 
 export async function registerSale(input: RegisterSaleInput): Promise<SaleResult> {
+  const cookieStore = await cookies();
+  const utm = parseUtmCookie(cookieStore.get(UTM_COOKIE_NAME)?.value);
+
   const saleInput = {
     cantidad: input.cantidad,
     transactionId: input.transactionId,
@@ -31,6 +36,9 @@ export async function registerSale(input: RegisterSaleInput): Promise<SaleResult
     telefonoRegistro: input.telefono,
     mensajeInicial: '', // La web no tiene "mensaje inicial" (campo del bot). Canal WEB va en col M
     isPromo3x1: input.isPromo3x1 === true,
+    utmSource: utm?.source,
+    utmMedium: utm?.medium,
+    utmCampaign: utm?.campaign,
   };
 
   const result =
