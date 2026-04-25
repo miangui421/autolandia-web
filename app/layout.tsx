@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import Script from 'next/script';
 import { Inter } from 'next/font/google';
 import { MetaPixel } from '@/components/MetaPixel';
+import { UtmCapture } from '@/components/UtmCapture';
+import { getClarityScript } from '@/lib/clarity';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,10 +24,20 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
+
   return (
     <html lang="es" className="dark">
       <body className={`${inter.className} bg-[#0a0a0f] text-white min-h-screen antialiased`}>
         <MetaPixel />
+        {clarityId && (
+          <Script id="clarity-init" strategy="afterInteractive">
+            {getClarityScript(clarityId)}
+          </Script>
+        )}
+        <Suspense fallback={null}>
+          <UtmCapture />
+        </Suspense>
         {children}
       </body>
     </html>
