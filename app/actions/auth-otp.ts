@@ -1,8 +1,10 @@
 'use server';
+import { cookies } from 'next/headers';
 import { sendVerification, checkVerification } from '@/lib/twilio';
 import { createServerClient } from '@/lib/supabase-server';
 import { appendLeadToSheets } from '@/lib/notifications';
 import { sendMetaEvent } from '@/lib/meta-capi';
+import { UTM_COOKIE_NAME, parseUtmCookie } from '@/lib/utm-tracking';
 
 /**
  * Envía un OTP al teléfono via Twilio Verify Service.
@@ -90,6 +92,10 @@ export async function verifyOtpAndGetToken(
     .maybeSingle();
 
   if (!existingLead) {
+    // First-touch: capturar UTMs de cookie solo al crear el lead (nunca se sobreescriben)
+    const cookieStore = await cookies();
+    const utm = parseUtmCookie(cookieStore.get(UTM_COOKIE_NAME)?.value);
+
     await supabase.from('leads').insert({
       phone: cleanPhone,
       stage: 'NUEVO',
@@ -97,9 +103,16 @@ export async function verifyOtpAndGetToken(
       last_contact_at: new Date().toISOString(),
       total_purchases: 0,
       total_spent: 0,
+      utm_source: utm?.source,
+      utm_medium: utm?.medium,
+      utm_campaign: utm?.campaign,
+      utm_content: utm?.content,
+      utm_term: utm?.term,
+      utm_landing_page: utm?.landing_page,
+      utm_first_visit_at: utm?.first_visit_at,
     });
   } else {
-    // Solo actualizar last_contact_at, no tocar stage ni totales
+    // Solo actualizar last_contact_at, no tocar stage ni totales ni UTMs (first-touch)
     await supabase
       .from('leads')
       .update({ last_contact_at: new Date().toISOString() })
