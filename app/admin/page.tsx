@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/admin-auth';
 import { listSorteos } from '@/app/actions/sorteo';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { DashboardStats } from '@/components/admin/DashboardStats';
+import { CanalSection } from '@/components/admin/CanalSection';
+import { AttributionSection } from '@/components/admin/AttributionSection';
 import { TicketManager } from '@/components/admin/TicketManager';
 import { formatGs } from '@/lib/calculator';
 
@@ -25,6 +27,12 @@ export default async function AdminDashboardPage() {
           </header>
           <DashboardStats />
         </section>
+
+        {/* ─── Sección 1.5: Ventas por canal (Web vs Bot) ─── */}
+        <CanalSection />
+
+        {/* ─── Sección 1.6: Ventas por medio (atribución UTMs) ─── */}
+        <AttributionSection />
 
         {/* ─── Sección 2: Sorteos laterales ─── */}
         <section>
